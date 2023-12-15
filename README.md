@@ -1,14 +1,10 @@
-# Project
+# gocosmos
 
-> This repo has been populated by an initial template to help get you started. Please
-> make sure to update the content to build a great experience for community-building.
+Go driver for [Azure Cosmos DB SQL API](https://azure.microsoft.com/services/cosmos-db/) which can be used with the standard [database/sql](https://golang.org/pkg/database/sql/) package. A REST client is also included.
 
-As the maintainer of this project, please make a few updates:
+## License
 
-- Improving this README.MD file to provide a great experience
-- Updating SUPPORT.MD with content about this project's support experience
-- Understanding the security reporting process in SECURITY.MD
-- Remove this section from the README
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
 ## Contributing
 
