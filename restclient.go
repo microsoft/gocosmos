@@ -15,7 +15,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/btnguyen2k/consu/checksum"
@@ -151,8 +150,8 @@ func (c *RestClient) addAuthHeader(req *http.Request, method, resType, resId str
 	return req
 }
 
-func (c *RestClient) buildRestReponse(resp *gjrc.GjrcResponse) RestReponse {
-	result := RestReponse{CallErr: resp.Error()}
+func (c *RestClient) buildRestResponse(resp *gjrc.GjrcResponse) RestResponse {
+	result := RestResponse{CallErr: resp.Error()}
 	if result.CallErr == nil {
 		result.StatusCode = resp.StatusCode()
 		result.RespBody, _ = resp.Body()
@@ -223,7 +222,7 @@ func (c *RestClient) CreateDatabase(spec DatabaseSpec) *RespCreateDb {
 	}
 
 	resp := c.client.Do(req)
-	result := &RespCreateDb{RestReponse: c.buildRestReponse(resp), DbInfo: DbInfo{Id: spec.Id}}
+	result := &RespCreateDb{RestResponse: c.buildRestResponse(resp), DbInfo: DbInfo{Id: spec.Id}}
 	if result.CallErr == nil {
 		result.CallErr = json.Unmarshal(result.RespBody, &(result.DbInfo))
 	}
@@ -240,7 +239,7 @@ func (c *RestClient) GetDatabase(dbName string) *RespGetDb {
 	req = c.addAuthHeader(req, method, "dbs", "dbs/"+dbName)
 
 	resp := c.client.Do(req)
-	result := &RespGetDb{RestReponse: c.buildRestReponse(resp)}
+	result := &RespGetDb{RestResponse: c.buildRestResponse(resp)}
 	if result.CallErr == nil {
 		result.CallErr = json.Unmarshal(result.RespBody, &(result.DbInfo))
 	}
@@ -257,7 +256,7 @@ func (c *RestClient) DeleteDatabase(dbName string) *RespDeleteDb {
 	req = c.addAuthHeader(req, method, "dbs", "dbs/"+dbName)
 
 	resp := c.client.Do(req)
-	result := &RespDeleteDb{RestReponse: c.buildRestReponse(resp)}
+	result := &RespDeleteDb{RestResponse: c.buildRestResponse(resp)}
 	return result
 }
 
@@ -271,7 +270,7 @@ func (c *RestClient) ListDatabases() *RespListDb {
 	req = c.addAuthHeader(req, method, "dbs", "")
 
 	resp := c.client.Do(req)
-	result := &RespListDb{RestReponse: c.buildRestReponse(resp)}
+	result := &RespListDb{RestResponse: c.buildRestResponse(resp)}
 	if result.CallErr == nil {
 		result.CallErr = json.Unmarshal(result.RespBody, &result)
 		if result.CallErr == nil {
@@ -321,7 +320,7 @@ func (c *RestClient) CreateCollection(spec CollectionSpec) *RespCreateColl {
 	}
 
 	resp := c.client.Do(req)
-	result := &RespCreateColl{RestReponse: c.buildRestReponse(resp), CollInfo: CollInfo{Id: spec.CollName}}
+	result := &RespCreateColl{RestResponse: c.buildRestResponse(resp), CollInfo: CollInfo{Id: spec.CollName}}
 	if result.CallErr == nil {
 		result.CallErr = json.Unmarshal(result.RespBody, &(result.CollInfo))
 	}
@@ -357,7 +356,7 @@ func (c *RestClient) ReplaceCollection(spec CollectionSpec) *RespReplaceColl {
 	}
 
 	resp := c.client.Do(req)
-	result := &RespReplaceColl{RestReponse: c.buildRestReponse(resp), CollInfo: CollInfo{Id: spec.CollName}}
+	result := &RespReplaceColl{RestResponse: c.buildRestResponse(resp), CollInfo: CollInfo{Id: spec.CollName}}
 	if result.CallErr == nil {
 		result.CallErr = json.Unmarshal(result.RespBody, &(result.CollInfo))
 	}
@@ -374,7 +373,7 @@ func (c *RestClient) GetCollection(dbName, collName string) *RespGetColl {
 	req = c.addAuthHeader(req, method, "colls", "dbs/"+dbName+"/colls/"+collName)
 
 	resp := c.client.Do(req)
-	result := &RespGetColl{RestReponse: c.buildRestReponse(resp)}
+	result := &RespGetColl{RestResponse: c.buildRestResponse(resp)}
 	if result.CallErr == nil {
 		result.CallErr = json.Unmarshal(result.RespBody, &(result.CollInfo))
 	}
@@ -391,7 +390,7 @@ func (c *RestClient) DeleteCollection(dbName, collName string) *RespDeleteColl {
 	req = c.addAuthHeader(req, method, "colls", "dbs/"+dbName+"/colls/"+collName)
 
 	resp := c.client.Do(req)
-	result := &RespDeleteColl{RestReponse: c.buildRestReponse(resp)}
+	result := &RespDeleteColl{RestResponse: c.buildRestResponse(resp)}
 	return result
 }
 
@@ -405,7 +404,7 @@ func (c *RestClient) ListCollections(dbName string) *RespListColl {
 	req = c.addAuthHeader(req, method, "colls", "dbs/"+dbName)
 
 	resp := c.client.Do(req)
-	result := &RespListColl{RestReponse: c.buildRestReponse(resp)}
+	result := &RespListColl{RestResponse: c.buildRestResponse(resp)}
 	if result.CallErr == nil {
 		result.CallErr = json.Unmarshal(result.RespBody, &result)
 		if result.CallErr == nil {
@@ -430,7 +429,7 @@ func (c *RestClient) GetPkranges(dbName, collName string) *RespGetPkranges {
 	req = c.addAuthHeader(req, method, "pkranges", "dbs/"+dbName+"/colls/"+collName)
 
 	resp := c.client.Do(req)
-	result := &RespGetPkranges{RestReponse: c.buildRestReponse(resp)}
+	result := &RespGetPkranges{RestResponse: c.buildRestResponse(resp)}
 	if result.CallErr == nil {
 		result.CallErr = json.Unmarshal(result.RespBody, &result)
 	}
@@ -469,7 +468,7 @@ func (c *RestClient) CreateDocument(spec DocumentSpec) *RespCreateDoc {
 	req.Header.Set(restApiHeaderPartitionKey, string(jsPkValues))
 
 	resp := c.client.Do(req)
-	result := &RespCreateDoc{RestReponse: c.buildRestReponse(resp)}
+	result := &RespCreateDoc{RestResponse: c.buildRestResponse(resp)}
 	if result.CallErr == nil {
 		result.CallErr = json.Unmarshal(result.RespBody, &(result.DocInfo))
 	}
@@ -492,7 +491,7 @@ func (c *RestClient) ReplaceDocument(matchEtag string, spec DocumentSpec) *RespR
 	req.Header.Set(restApiHeaderPartitionKey, string(jsPkValues))
 
 	resp := c.client.Do(req)
-	result := &RespReplaceDoc{RestReponse: c.buildRestReponse(resp)}
+	result := &RespReplaceDoc{RestResponse: c.buildRestResponse(resp)}
 	if result.CallErr == nil {
 		result.CallErr = json.Unmarshal(result.RespBody, &(result.DocInfo))
 	}
@@ -530,7 +529,7 @@ func (c *RestClient) GetDocument(r DocReq) *RespGetDoc {
 	}
 
 	resp := c.client.Do(req)
-	result := &RespGetDoc{RestReponse: c.buildRestReponse(resp)}
+	result := &RespGetDoc{RestResponse: c.buildRestResponse(resp)}
 	if result.CallErr == nil && result.StatusCode != 304 {
 		result.CallErr = json.Unmarshal(result.RespBody, &(result.DocInfo))
 	}
@@ -552,7 +551,7 @@ func (c *RestClient) DeleteDocument(r DocReq) *RespDeleteDoc {
 	}
 
 	resp := c.client.Do(req)
-	result := &RespDeleteDoc{RestReponse: c.buildRestReponse(resp)}
+	result := &RespDeleteDoc{RestResponse: c.buildRestResponse(resp)}
 	return result
 }
 
@@ -765,7 +764,7 @@ func (c *RestClient) queryDocumentsSimple(query QueryReq, queryPlan *RespQueryPl
 	}
 	for {
 		resp := c.client.Do(req)
-		tempResult := &RespQueryDocs{RestReponse: c.buildRestReponse(resp)}
+		tempResult := &RespQueryDocs{RestResponse: c.buildRestResponse(resp)}
 		if tempResult.CallErr == nil {
 			tempResult.ContinuationToken = tempResult.RespHeader[respHeaderContinuation]
 			tempResult.CallErr = json.Unmarshal(tempResult.RespBody, &tempResult)
@@ -791,7 +790,7 @@ func (c *RestClient) queryDocumentsSimple(query QueryReq, queryPlan *RespQueryPl
 func (c *RestClient) queryDocumentsCall(query QueryReq) *RespQueryDocs {
 	req := c.buildQueryRequest(query)
 	resp := c.client.Do(req)
-	result := &RespQueryDocs{RestReponse: c.buildRestReponse(resp)}
+	result := &RespQueryDocs{RestResponse: c.buildRestResponse(resp)}
 	if result.CallErr == nil {
 		result.ContinuationToken = result.RespHeader[respHeaderContinuation]
 		result.CallErr = json.Unmarshal(result.RespBody, &result)
@@ -820,13 +819,13 @@ func (c *RestClient) queryDocumentsCall(query QueryReq) *RespQueryDocs {
 func (c *RestClient) QueryDocuments(query QueryReq) *RespQueryDocs {
 	queryPlan := c.QueryPlan(query)
 	if queryPlan.Error() != nil {
-		return &RespQueryDocs{RestReponse: queryPlan.RestReponse}
+		return &RespQueryDocs{RestResponse: queryPlan.RestResponse}
 	}
 
 	if queryPlan.QueryInfo.DistinctType != "None" || queryPlan.QueryInfo.RewrittenQuery != "" {
 		pkranges := c.GetPkranges(query.DbName, query.CollName)
 		if pkranges.Error() != nil {
-			return &RespQueryDocs{RestReponse: pkranges.RestReponse}
+			return &RespQueryDocs{RestResponse: pkranges.RestResponse}
 		}
 		return c.queryAndMerge(query, pkranges, queryPlan)
 	}
@@ -843,12 +842,12 @@ func (c *RestClient) QueryDocumentsCrossPartition(query QueryReq) *RespQueryDocs
 	query.CrossPartitionEnabled = true
 	queryPlan := c.QueryPlan(query)
 	if queryPlan.Error() != nil {
-		return &RespQueryDocs{RestReponse: queryPlan.RestReponse}
+		return &RespQueryDocs{RestResponse: queryPlan.RestResponse}
 	}
 	queryRewritten := queryPlan.QueryInfo.RewrittenQuery != ""
 	pkranges := c.GetPkranges(query.DbName, query.CollName)
 	if pkranges.Error() != nil {
-		return &RespQueryDocs{RestReponse: pkranges.RestReponse}
+		return &RespQueryDocs{RestResponse: pkranges.RestResponse}
 	}
 	if queryRewritten {
 		query.Query = strings.ReplaceAll(queryPlan.QueryInfo.RewrittenQuery, "{documentdb-formattableorderbyquery-filter}", "true")
@@ -903,7 +902,7 @@ func (c *RestClient) QueryPlan(query QueryReq) *RespQueryPlan {
 	req.Header.Set(restApiHeaderEnableCrossPartitionQuery, "true")
 	req.Header.Set(restApiHeaderParallelizeCrossPartitionQuery, "true")
 	resp := c.client.Do(req)
-	result := &RespQueryPlan{RestReponse: c.buildRestReponse(resp)}
+	result := &RespQueryPlan{RestResponse: c.buildRestResponse(resp)}
 	if result.CallErr == nil {
 		result.CallErr = json.Unmarshal(result.RespBody, &result)
 	}
@@ -926,7 +925,7 @@ func (c *RestClient) getChangeFeed(r ListDocsReq, req *http.Request) *RespListDo
 	var result *RespListDocs
 	for {
 		resp := c.client.Do(req)
-		tempResult := &RespListDocs{RestReponse: c.buildRestReponse(resp)}
+		tempResult := &RespListDocs{RestResponse: c.buildRestResponse(resp)}
 		if 300 <= tempResult.StatusCode && tempResult.StatusCode < 400 {
 			// not an error, the status code 3xx indicates that there is currently no item from the change feed
 		} else if tempResult.CallErr == nil {
@@ -998,7 +997,7 @@ func (c *RestClient) ListDocuments(r ListDocsReq) *RespListDocs {
 	var result *RespListDocs
 	for {
 		resp := c.client.Do(req)
-		tempResult := &RespListDocs{RestReponse: c.buildRestReponse(resp)}
+		tempResult := &RespListDocs{RestResponse: c.buildRestResponse(resp)}
 		if tempResult.CallErr == nil {
 			tempResult.ContinuationToken = tempResult.RespHeader[respHeaderContinuation]
 			tempResult.Etag = tempResult.RespHeader[respHeaderEtag]
@@ -1027,7 +1026,7 @@ func (c *RestClient) ListDocuments(r ListDocsReq) *RespListDocs {
 // Available since v0.1.1
 func (c *RestClient) GetOfferForResource(rid string) *RespGetOffer {
 	queryResult := c.QueryOffers(`SELECT * FROM root WHERE root.offerResourceId="` + rid + `"`)
-	result := &RespGetOffer{RestReponse: queryResult.RestReponse}
+	result := &RespGetOffer{RestResponse: queryResult.RestResponse}
 	if result.Error() == nil {
 		if len(queryResult.Offers) == 0 {
 			result.StatusCode = 404
@@ -1053,7 +1052,7 @@ func (c *RestClient) QueryOffers(query string) *RespQueryOffers {
 	req.Header.Set(restApiHeaderIsQuery, "true")
 
 	resp := c.client.Do(req)
-	result := &RespQueryOffers{RestReponse: c.buildRestReponse(resp)}
+	result := &RespQueryOffers{RestResponse: c.buildRestResponse(resp)}
 	if result.CallErr == nil {
 		result.ContinuationToken = result.RespHeader[respHeaderContinuation]
 		result.CallErr = json.Unmarshal(result.RespBody, &result)
@@ -1102,7 +1101,7 @@ func (c *RestClient) buildReplaceOfferContentAndHeaders(currentOffer OfferInfo, 
 func (c *RestClient) ReplaceOfferForResource(rid string, ru, maxru int) *RespReplaceOffer {
 	if ru > 0 && maxru > 0 {
 		return &RespReplaceOffer{
-			RestReponse: RestReponse{
+			RestResponse: RestResponse{
 				ApiErr:     errors.New("either one of RU or MAXRU must be supplied, not both"),
 				StatusCode: 400,
 			},
@@ -1122,7 +1121,7 @@ func (c *RestClient) ReplaceOfferForResource(rid string, ru, maxru int) *RespRep
 		}
 		content, headers := c.buildReplaceOfferContentAndHeaders(getResult.OfferInfo, ru, maxru)
 		if content == nil {
-			return &RespReplaceOffer{RestReponse: getResult.RestReponse, OfferInfo: getResult.OfferInfo}
+			return &RespReplaceOffer{RestResponse: getResult.RestResponse, OfferInfo: getResult.OfferInfo}
 		}
 		params[restApiParamContent] = content
 		req := c.buildJsonRequest(method, url, params)
@@ -1137,7 +1136,7 @@ func (c *RestClient) ReplaceOfferForResource(rid string, ru, maxru int) *RespRep
 			req.Header.Set(k, v)
 		}
 		resp := c.client.Do(req)
-		result := &RespReplaceOffer{RestReponse: c.buildRestReponse(resp)}
+		result := &RespReplaceOffer{RestResponse: c.buildRestResponse(resp)}
 		if result.CallErr == nil {
 			if (headers[restApiHeaderMigrateToAutopilotThroughput] == "true" && maxru > 0) || (headers[restApiHeaderMigrateToManualThroughput] == "true" && ru > 0) {
 				return c.ReplaceOfferForResource(rid, ru, maxru)
@@ -1146,13 +1145,13 @@ func (c *RestClient) ReplaceOfferForResource(rid string, ru, maxru int) *RespRep
 		}
 		return result
 	}
-	return &RespReplaceOffer{RestReponse: getResult.RestReponse}
+	return &RespReplaceOffer{RestResponse: getResult.RestResponse}
 }
 
 /*----------------------------------------------------------------------*/
 
-// RestReponse captures the response from REST API call.
-type RestReponse struct {
+// RestResponse captures the response from REST API call.
+type RestResponse struct {
 	// CallErr holds any error occurred during the REST call.
 	CallErr error
 	// ApiErr holds any error occurred during the API call (only available when StatusCode >= 400).
@@ -1170,7 +1169,7 @@ type RestReponse struct {
 }
 
 // Error returns CallErr if not nil, ApiErr otherwise.
-func (r RestReponse) Error() error {
+func (r RestResponse) Error() error {
 	if r.CallErr != nil {
 		return r.CallErr
 	}
@@ -1202,26 +1201,26 @@ func (db *DbInfo) toMap() map[string]interface{} {
 
 // RespCreateDb captures the response from RestClient.CreateDatabase call.
 type RespCreateDb struct {
-	RestReponse
+	RestResponse
 	DbInfo
 }
 
 // RespGetDb captures the response from RestClient.GetDatabase call.
 type RespGetDb struct {
-	RestReponse
+	RestResponse
 	DbInfo
 }
 
 // RespDeleteDb captures the response from RestClient.DeleteDatabase call.
 type RespDeleteDb struct {
-	RestReponse
+	RestResponse
 }
 
 // RespListDb captures the response from RestClient.ListDatabases call.
 type RespListDb struct {
-	RestReponse `json:"-"`
-	Count       int      `json:"_count"` // number of databases returned from the list operation
-	Databases   []DbInfo `json:"Databases"`
+	RestResponse `json:"-"`
+	Count        int      `json:"_count"` // number of databases returned from the list operation
+	Databases    []DbInfo `json:"Databases"`
 }
 
 // PkInfo holds partitioning configuration settings for a collection.
@@ -1292,32 +1291,32 @@ func (c *CollInfo) toMap() map[string]interface{} {
 
 // RespCreateColl captures the response from RestClient.CreateCollection call.
 type RespCreateColl struct {
-	RestReponse
+	RestResponse
 	CollInfo
 }
 
 // RespReplaceColl captures the response from RestClient.ReplaceCollection call.
 type RespReplaceColl struct {
-	RestReponse
+	RestResponse
 	CollInfo
 }
 
 // RespGetColl captures the response from RestClient.GetCollection call.
 type RespGetColl struct {
-	RestReponse
+	RestResponse
 	CollInfo
 }
 
 // RespDeleteColl captures the response from RestClient.DeleteCollection call.
 type RespDeleteColl struct {
-	RestReponse
+	RestResponse
 }
 
 // RespListColl captures the response from RestClient.ListCollections call.
 type RespListColl struct {
-	RestReponse `json:"-"`
-	Count       int        `json:"_count"` // number of collections returned from the list operation
-	Collections []CollInfo `json:"DocumentCollections"`
+	RestResponse `json:"-"`
+	Count        int        `json:"_count"` // number of collections returned from the list operation
+	Collections  []CollInfo `json:"DocumentCollections"`
 }
 
 // QueriedDocs is list of returned documents from a query such as result from RestClient.QueryDocuments call.
@@ -1495,11 +1494,11 @@ func (docs QueriedDocs) Flatten(queryPlan *RespQueryPlan) QueriedDocs {
 	for i, item := range docs {
 		doc := item
 		if queryPlan != nil && (queryPlan.IsOrderByQuery() || queryPlan.IsGroupByQuery()) {
-			switch item.(type) {
+			switch v := item.(type) {
 			case map[string]interface{}:
-				doc = item.(map[string]interface{})["payload"]
+				doc = v["payload"]
 			case DocInfo:
-				doc = item.(DocInfo)["payload"]
+				doc = v["payload"]
 			}
 			if queryPlan.IsGroupByQuery() {
 				payload, ok := doc.(map[string]interface{})
@@ -1701,30 +1700,30 @@ func (d DocInfo) GetAttrAsTypeUnsafe(attrName string, typ reflect.Type) interfac
 
 // RespCreateDoc captures the response from RestClient.CreateDocument call.
 type RespCreateDoc struct {
-	RestReponse
+	RestResponse
 	DocInfo
 }
 
 // RespReplaceDoc captures the response from RestClient.ReplaceDocument call.
 type RespReplaceDoc struct {
-	RestReponse
+	RestResponse
 	DocInfo
 }
 
 // RespGetDoc captures the response from RestClient.GetDocument call.
 type RespGetDoc struct {
-	RestReponse
+	RestResponse
 	DocInfo
 }
 
 // RespDeleteDoc captures the response from RestClient.DeleteDocument call.
 type RespDeleteDoc struct {
-	RestReponse
+	RestResponse
 }
 
 // RespQueryDocs captures the response from RestClient.QueryDocuments call.
 type RespQueryDocs struct {
-	RestReponse        `json:"-"`
+	RestResponse       `json:"-"`
 	Count              int            `json:"_count"` // number of documents returned from the operation
 	Documents          QueriedDocs    `json:"Documents"`
 	ContinuationToken  string         `json:"-"`
@@ -1759,7 +1758,7 @@ type typDCountInfo struct {
 //
 // Available since v0.1.8
 type RespQueryPlan struct {
-	RestReponse               `json:"-"`
+	RestResponse              `json:"-"`
 	QueryExecutionInfoVersion int `json:"partitionedQueryExecutionInfoVersion"`
 	QueryInfo                 struct {
 		DistinctType                string            `json:"distinctType"` // possible values: None, Ordered, Unordered
@@ -1801,7 +1800,7 @@ func (qp *RespQueryPlan) IsOrderByQuery() bool {
 
 // RespListDocs captures the response from RestClient.ListDocuments call.
 type RespListDocs struct {
-	RestReponse       `json:"-"`
+	RestResponse      `json:"-"`
 	Count             int       `json:"_count"` // number of documents returned from the operation
 	Documents         []DocInfo `json:"Documents"`
 	ContinuationToken string    `json:"-"`
@@ -1822,14 +1821,14 @@ type OfferInfo struct {
 	Ts              int64                  `json:"_ts"`             // It is a system-generated property. It specifies the last updated timestamp of the resource. The value is a timestamp.
 	Self            string                 `json:"_self"`           // It is a system-generated property. It is the unique addressable URI for the resource.
 	Etag            string                 `json:"_etag"`           // It is a system-generated property that specifies the resource etag required for optimistic concurrency control.
-	_lock           sync.Mutex
-	_s              *semita.Semita
+	//_lock           sync.Mutex
+	_s *semita.Semita
 }
 
 // OfferThroughput returns value of field 'offerThroughput'
 func (o OfferInfo) OfferThroughput() int {
-	o._lock.Lock()
-	defer o._lock.Unlock()
+	//o._lock.Lock()
+	//defer o._lock.Unlock()
 	if o._s == nil {
 		o._s = semita.NewSemita(o.Content)
 	}
@@ -1842,8 +1841,8 @@ func (o OfferInfo) OfferThroughput() int {
 
 // MaxThroughputEverProvisioned returns value of field 'maxThroughputEverProvisioned'
 func (o OfferInfo) MaxThroughputEverProvisioned() int {
-	o._lock.Lock()
-	defer o._lock.Unlock()
+	//o._lock.Lock()
+	//defer o._lock.Unlock()
 	if o._s == nil {
 		o._s = semita.NewSemita(o.Content)
 	}
@@ -1856,8 +1855,8 @@ func (o OfferInfo) MaxThroughputEverProvisioned() int {
 
 // IsAutopilot returns true if autopilot is enabled, false otherwise.
 func (o OfferInfo) IsAutopilot() bool {
-	o._lock.Lock()
-	defer o._lock.Unlock()
+	//o._lock.Lock()
+	//defer o._lock.Unlock()
 	if o._s == nil {
 		o._s = semita.NewSemita(o.Content)
 	}
@@ -1867,13 +1866,13 @@ func (o OfferInfo) IsAutopilot() bool {
 
 // RespGetOffer captures the response from RestClient.GetOffer call.
 type RespGetOffer struct {
-	RestReponse
+	RestResponse
 	OfferInfo
 }
 
 // RespQueryOffers captures the response from RestClient.QueryOffers call.
 type RespQueryOffers struct {
-	RestReponse       `json:"-"`
+	RestResponse      `json:"-"`
 	Count             int         `json:"_count"` // number of records returned from the operation
 	Offers            []OfferInfo `json:"Offers"`
 	ContinuationToken string      `json:"-"`
@@ -1881,7 +1880,7 @@ type RespQueryOffers struct {
 
 // RespReplaceOffer captures the response from RestClient.ReplaceOffer call.
 type RespReplaceOffer struct {
-	RestReponse
+	RestResponse
 	OfferInfo
 }
 
@@ -1904,7 +1903,7 @@ type PkrangeInfo struct {
 //
 // Available since v0.1.3.
 type RespGetPkranges struct {
-	RestReponse `json:"-"`
-	Pkranges    []PkrangeInfo `json:"PartitionKeyRanges"`
-	Count       int           `json:"_count"` // number of records returned from the operation
+	RestResponse `json:"-"`
+	Pkranges     []PkrangeInfo `json:"PartitionKeyRanges"`
+	Count        int           `json:"_count"` // number of records returned from the operation
 }

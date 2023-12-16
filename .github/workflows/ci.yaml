@@ -112,6 +112,7 @@ jobs:
           go-version: ${{ matrix.go }}
       - name: Run tests
         run: |
+          try { & "C:\Program Files\Azure Cosmos DB Emulator\Microsoft.Azure.Cosmos.Emulator.exe" /ShutDown } catch {}
           choco upgrade azure-cosmosdb-emulator --no-progress
           & "C:\Program Files\Azure Cosmos DB Emulator\Microsoft.Azure.Cosmos.Emulator.exe" /DisableRateLimiting /NoUI /NoExplorer
           Start-Sleep -s 75

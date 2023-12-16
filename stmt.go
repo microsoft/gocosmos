@@ -34,9 +34,9 @@ var (
 	reDelete = regexp.MustCompile(`(?is)^DELETE\s+FROM\s+(` + field + `\.)?` + field + `\s+WHERE\s+id\s*=\s*(.*?)` + with + `$`)
 )
 
-func parseQuery(c *Conn, query string) (driver.Stmt, error) {
-	return parseQueryWithDefaultDb(c, "", query)
-}
+//func parseQuery(c *Conn, query string) (driver.Stmt, error) {
+//	return parseQueryWithDefaultDb(c, "", query)
+//}
 
 func parseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, error) {
 	query = strings.TrimSpace(query)
@@ -291,7 +291,7 @@ func normalizeError(statusCode, ignoreErrorCode int, err error) error {
 	return err
 }
 
-func buildResultNoResultSet(restResponse *RestReponse, supportLastInsertId bool, rid string, ignoreErrorCode int) *ResultNoResultSet {
+func buildResultNoResultSet(restResponse *RestResponse, supportLastInsertId bool, rid string, ignoreErrorCode int) *ResultNoResultSet {
 	result := &ResultNoResultSet{
 		err:                 restResponse.Error(),
 		lastInsertId:        rid,
