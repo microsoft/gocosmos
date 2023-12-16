@@ -60,11 +60,13 @@ jobs:
         run: |
           go version
           go test -v -timeout 9999s -count 1 -p 1 -cover -coverprofile coverage.txt ./
-#      - name: Codecov
-#        uses: codecov/codecov-action@v3
-#        with:
-#          flags: module
-#          name: module
+      - name: Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: module
+          name: module
 
   TestRestClientNonQuery:
     runs-on: windows-latest
@@ -91,11 +93,13 @@ jobs:
           cd module_test
           go test -v -timeout 9999s -count 1 -p 1 -cover -coverpkg="$env:COVER_PKG" -coverprofile="../coverage_restclient_nonquery.txt" -run "TestRestClient_[^Q]" ./
           cd ..
-#      - name: Codecov
-#        uses: codecov/codecov-action@v3
-#        with:
-#          flags: restclient_nonquery
-#          name: restclient_nonquery
+      - name: Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: restclient_nonquery
+          name: restclient_nonquery
 
   TestRestClientQuery:
     runs-on: windows-latest
@@ -122,8 +126,10 @@ jobs:
           cd module_test
           go test -v -timeout 9999s -count 1 -p 1 -cover -coverpkg="$env:COVER_PKG" -coverprofile="../coverage_restclient_query.txt" -run "TestRestClient_QueryDocuments" ./
           cd ..
-#      - name: Codecov
-#        uses: codecov/codecov-action@v3
-#        with:
-#          flags: restclient_query
-#          name: restclient_query
+      - name: Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: restclient_query
+          name: restclient_query
