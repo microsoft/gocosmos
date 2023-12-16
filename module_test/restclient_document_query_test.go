@@ -1033,7 +1033,7 @@ func _testRestClientQueryDocumentsContinuation(t *testing.T, testName string, cl
 					result = tempResult
 				} else {
 					if strings.HasPrefix(testCase.name, "*") {
-						result.RestReponse = tempResult.RestReponse
+						result.RestResponse = tempResult.RestResponse
 						if result.RewrittenDocuments == nil {
 							result.Documents = result.Documents.Merge(tempResult.QueryPlan, tempResult.Documents)
 						} else {
