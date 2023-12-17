@@ -19,8 +19,8 @@ func TestRestClient_CreateCollection(t *testing.T) {
 		{DbName: dbname, CollName: collname, MaxRu: 10000, PartitionKeyInfo: map[string]interface{}{"paths": []string{"/id"}, "kind": "Hash"}},
 	}
 	for _, collspec := range collspecList {
-		client.DeleteDatabase(dbname)
-		client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
+		_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+
 		var collInfo gocosmos.CollInfo
 		if result := client.CreateCollection(collspec); result.Error() != nil {
 			t.Fatalf("%s failed: %s", name, result.Error())
@@ -54,7 +54,7 @@ func TestRestClient_CreateCollection(t *testing.T) {
 		}
 	}
 
-	client.DeleteDatabase("db_not_found")
+	_deleteDatabase(client, "db_not_found")
 	if result := client.CreateCollection(gocosmos.CollectionSpec{
 		DbName:           "db_not_found",
 		CollName:         collname,
@@ -78,8 +78,8 @@ func TestRestClient_CreateCollection_SubPartitions(t *testing.T) {
 		{DbName: dbname, CollName: collname, MaxRu: 4000, PartitionKeyInfo: map[string]interface{}{"paths": []string{"/TenantId", "/UserId", "/SessionId"}, "kind": "MultiHash", "version": 2}},
 	}
 	for _, collspec := range collspecList {
-		client.DeleteDatabase(dbname)
-		client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
+		_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+
 		var collInfo gocosmos.CollInfo
 		if result := client.CreateCollection(collspec); result.Error() != nil {
 			t.Fatalf("%s failed: %s", name, result.Error())
@@ -120,8 +120,7 @@ func TestRestClient_ChangeOfferCollection(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
 	collspec := gocosmos.CollectionSpec{DbName: dbname, CollName: collname, PartitionKeyInfo: map[string]interface{}{"paths": []string{"/id"}, "kind": "Hash"}}
 
 	var collInfo gocosmos.CollInfo
@@ -217,8 +216,7 @@ func TestRestClient_ChangeOfferCollectionInvalid(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
 	collspec := gocosmos.CollectionSpec{DbName: dbname, CollName: collname, PartitionKeyInfo: map[string]interface{}{"paths": []string{"/id"}, "kind": "Hash"}}
 
 	var collInfo gocosmos.CollInfo
@@ -256,8 +254,7 @@ func TestRestClient_CreateCollectionIndexingPolicy(t *testing.T) {
 		DbName: dbname, CollName: collname,
 		IndexingPolicy:   map[string]interface{}{"indexingMode": "consistent", "automatic": true},
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/id"}, "kind": "Hash"}}
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
 	if result := client.CreateCollection(collSpec); result.Error() != nil {
 		t.Fatalf("%s failed: %s", name, result.Error())
 	}
@@ -269,9 +266,8 @@ func TestRestClient_ReplaceCollection(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{DbName: dbname, CollName: collname, PartitionKeyInfo: map[string]interface{}{"paths": []string{"/id"}, "kind": "Hash"}})
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{DbName: dbname, CollName: collname, PartitionKeyInfo: map[string]interface{}{"paths": []string{"/id"}, "kind": "Hash"}})
 
 	collspecList := []gocosmos.CollectionSpec{
 		{DbName: dbname, CollName: collname, Ru: 800, PartitionKeyInfo: map[string]interface{}{"paths": []string{"/id"}, "kind": "Hash"},
@@ -295,7 +291,7 @@ func TestRestClient_ReplaceCollection(t *testing.T) {
 		}
 	}
 
-	client.DeleteCollection(dbname, "table_not_found")
+	_deleteCollection(client, dbname, "table_not_found")
 	if result := client.ReplaceCollection(gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         "table_not_found",
@@ -306,7 +302,7 @@ func TestRestClient_ReplaceCollection(t *testing.T) {
 		t.Fatalf("%s failed: <status-code> expected %#v but received %#v", name, 404, result.StatusCode)
 	}
 
-	client.DeleteDatabase("db_not_found")
+	_deleteDatabase(client, "db_not_found")
 	if result := client.ReplaceCollection(gocosmos.CollectionSpec{
 		DbName:           "db_not_found",
 		CollName:         collname,
@@ -324,8 +320,8 @@ func TestRestClient_DeleteCollection(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/id"}, "kind": "Hash"},
@@ -339,7 +335,7 @@ func TestRestClient_DeleteCollection(t *testing.T) {
 		t.Fatalf("%s failed: <status-code> expected %#v but received %#v", name, 404, result.StatusCode)
 	}
 
-	client.DeleteDatabase("db_not_found")
+	_deleteDatabase(client, "db_not_found")
 	if result := client.DeleteCollection("db_not_found", collname); result.CallErr != nil {
 		t.Fatalf("%s failed: %s", name, result.CallErr)
 	} else if result.StatusCode != 404 {
@@ -353,9 +349,8 @@ func TestRestClient_GetCollection(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/id"}, "kind": "Hash"},
@@ -371,14 +366,14 @@ func TestRestClient_GetCollection(t *testing.T) {
 		t.Fatalf("%s failed: invalid collinfo returned %#v", name, result.CollInfo)
 	}
 
-	client.DeleteCollection(dbname, "table_not_found")
+	_deleteCollection(client, dbname, "table_not_found")
 	if result := client.GetCollection(dbname, "table_not_found"); result.CallErr != nil {
 		t.Fatalf("%s failed: %s", name, result.CallErr)
 	} else if result.StatusCode != 404 {
 		t.Fatalf("%s failed: <status-code> expected %#v but received %#v", name, 404, result.StatusCode)
 	}
 
-	client.DeleteDatabase("db_not_found")
+	_deleteDatabase(client, "db_not_found")
 	if result := client.GetCollection("db_not_found", "table_not_found"); result.CallErr != nil {
 		t.Fatalf("%s failed: %s", name, result.CallErr)
 	} else if result.StatusCode != 404 {
@@ -391,8 +386,7 @@ func TestRestClient_ListCollection(t *testing.T) {
 	client := _newRestClient(t, name)
 
 	dbname := testDb
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
 	collnames := map[string]int{"table1": 1, "table3": 1, "table5": 1, "table4": 1, "table2": 1}
 	for collname := range collnames {
 		result := client.CreateCollection(gocosmos.CollectionSpec{
@@ -417,7 +411,7 @@ func TestRestClient_ListCollection(t *testing.T) {
 		}
 	}
 
-	client.DeleteDatabase("db_not_found")
+	_deleteDatabase(client, "db_not_found")
 	if result := client.ListCollections("db_not_found"); result.CallErr != nil {
 		t.Fatalf("%s failed: %s", name, result.CallErr)
 	} else if result.StatusCode != 404 {

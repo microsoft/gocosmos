@@ -56,9 +56,8 @@ func _initDataSubPartitions(t *testing.T, testName string, client *gocosmos.Rest
 }
 
 func _initDataSubPartitionsSmallRU(t *testing.T, testName string, client *gocosmos.RestClient, db, container string, numItem int) {
-	client.DeleteDatabase(db)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: db, Ru: 400})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: db, Ru: 400})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           db,
 		CollName:         container,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/app", "/username"}, "kind": "MultiHash", "version": 2},
@@ -69,9 +68,8 @@ func _initDataSubPartitionsSmallRU(t *testing.T, testName string, client *gocosm
 }
 
 func _initDataSubPartitionsLargeRU(t *testing.T, testName string, client *gocosmos.RestClient, db, container string, numItem int) {
-	client.DeleteDatabase(db)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: db, Ru: 20000})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: db, Ru: 20000})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           db,
 		CollName:         container,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/app", "/username"}, "kind": "MultiHash", "version": 2},
@@ -114,9 +112,8 @@ func _initData(t *testing.T, testName string, client *gocosmos.RestClient, db, c
 }
 
 func _initDataSmallRU(t *testing.T, testName string, client *gocosmos.RestClient, db, container string, numItem int) {
-	client.DeleteDatabase(db)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: db, Ru: 400})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: db, Ru: 400})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           db,
 		CollName:         container,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/username"}, "kind": "Hash"},
@@ -127,9 +124,8 @@ func _initDataSmallRU(t *testing.T, testName string, client *gocosmos.RestClient
 }
 
 func _initDataLargeRU(t *testing.T, testName string, client *gocosmos.RestClient, db, container string, numItem int) {
-	client.DeleteDatabase(db)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: db, Ru: 20000})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: db, Ru: 20000})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           db,
 		CollName:         container,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/username"}, "kind": "Hash"},
@@ -157,9 +153,8 @@ func _initDataFamilies(t *testing.T, testName string, client *gocosmos.RestClien
 }
 
 func _initDataFamliesSmallRU(t *testing.T, testName string, client *gocosmos.RestClient, db, container string) {
-	client.DeleteDatabase(db)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: db, Ru: 400})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: db, Ru: 400})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           db,
 		CollName:         container,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/id"}, "kind": "Hash"},
@@ -169,9 +164,8 @@ func _initDataFamliesSmallRU(t *testing.T, testName string, client *gocosmos.Res
 }
 
 func _initDataFamliesLargeRU(t *testing.T, testName string, client *gocosmos.RestClient, db, container string) {
-	client.DeleteDatabase(db)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: db, Ru: 20000})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: db, Ru: 20000})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           db,
 		CollName:         container,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/id"}, "kind": "Hash"},
@@ -195,9 +189,8 @@ func _initDataVolcano(t *testing.T, testName string, client *gocosmos.RestClient
 }
 
 func _initDataVolcanoSmallRU(t *testing.T, testName string, client *gocosmos.RestClient, db, container string) {
-	client.DeleteDatabase(db)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: db, Ru: 400})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: db, Ru: 400})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           db,
 		CollName:         container,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/id"}, "kind": "Hash"},
@@ -207,9 +200,8 @@ func _initDataVolcanoSmallRU(t *testing.T, testName string, client *gocosmos.Res
 }
 
 func _initDataVolcanoLargeRU(t *testing.T, testName string, client *gocosmos.RestClient, db, container string) {
-	client.DeleteDatabase(db)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: db, Ru: 20000})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: db, Ru: 20000})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           db,
 		CollName:         container,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/id"}, "kind": "Hash"},
@@ -28595,9 +28587,8 @@ func _initDataNutrition(t *testing.T, testName string, client *gocosmos.RestClie
 }
 
 func _initDataNutritionSmallRU(t *testing.T, testName string, client *gocosmos.RestClient, db, container string) {
-	client.DeleteDatabase(db)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: db, Ru: 400})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: db, Ru: 400})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           db,
 		CollName:         container,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/id"}, "kind": "Hash"},
@@ -28607,9 +28598,8 @@ func _initDataNutritionSmallRU(t *testing.T, testName string, client *gocosmos.R
 }
 
 func _initDataNutritionLargeRU(t *testing.T, testName string, client *gocosmos.RestClient, db, container string) {
-	client.DeleteDatabase(db)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: db, Ru: 20000})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: db, Ru: 20000})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           db,
 		CollName:         container,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/id"}, "kind": "Hash"},

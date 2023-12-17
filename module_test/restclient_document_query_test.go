@@ -39,8 +39,8 @@ func TestRestClient_QueryDocuments_DbOrTableNotExists(t *testing.T) {
 	collname := testTable
 	client := _newRestClient(t, testName)
 	_initDataSmallRU(t, testName, client, dbname, collname, 0)
-	client.DeleteDatabase("db_not_exists")
-	client.DeleteCollection(dbname, "table_not_exists")
+	_deleteDatabase(client, "db_not_exists")
+	_deleteCollection(client, dbname, "table_not_exists")
 
 	query := gocosmos.QueryReq{DbName: dbname, CollName: collname, Query: "SELECT * FROM c"}
 

@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 const (
@@ -50,15 +51,56 @@ func _newRestClient(t *testing.T, testName string) *gocosmos.RestClient {
 	return client
 }
 
+func _deleteDatabase(client *gocosmos.RestClient, dbname string) {
+	client.DeleteDatabase(dbname)
+	for result := client.GetDatabase(dbname); result.Error() == nil; result = client.GetDatabase(dbname) {
+		fmt.Printf("[DEBUG] waiting for database %s to be deleted...\n", dbname)
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func _createDatabase(client *gocosmos.RestClient, spec gocosmos.DatabaseSpec) {
+	client.CreateDatabase(spec)
+	for result := client.GetDatabase(spec.Id); result.Error() != nil; result = client.GetDatabase(spec.Id) {
+		fmt.Printf("[DEBUG] waiting for database %s to be created...\n", spec.Id)
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func _ensureDatabase(client *gocosmos.RestClient, spec gocosmos.DatabaseSpec) {
+	_deleteDatabase(client, spec.Id)
+	_createDatabase(client, spec)
+}
+
+func _deleteCollection(client *gocosmos.RestClient, dbname, collname string) {
+	client.DeleteCollection(dbname, collname)
+	for result := client.GetCollection(dbname, collname); result.Error() == nil; result = client.GetCollection(dbname, collname) {
+		fmt.Printf("[DEBUG] waiting for collection %s to be deleted...\n", collname)
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func _createCollection(client *gocosmos.RestClient, spec gocosmos.CollectionSpec) {
+	client.CreateCollection(spec)
+	for result := client.GetCollection(spec.DbName, spec.CollName); result.Error() != nil; result = client.GetCollection(spec.DbName, spec.CollName) {
+		fmt.Printf("[DEBUG] waiting for collection %s to be created...\n", spec.CollName)
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func _ensureCollection(client *gocosmos.RestClient, spec gocosmos.CollectionSpec) {
+	_deleteCollection(client, spec.DbName, spec.CollName)
+	_createCollection(client, spec)
+}
+
 func TestRestClient_GetPkranges(t *testing.T) {
 	name := "TestRestClient_GetPkranges"
 	client := _newRestClient(t, name)
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname, MaxRu: 10000})
-	client.CreateCollection(gocosmos.CollectionSpec{DbName: dbname, CollName: collname,
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname, MaxRu: 10000})
+	_ensureCollection(client, gocosmos.CollectionSpec{DbName: dbname, CollName: collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/username"}, "kind": "Hash"},
 	})
 
@@ -68,14 +110,14 @@ func TestRestClient_GetPkranges(t *testing.T) {
 		t.Fatalf("%s failed: invalid number of pk ranges %#v", name, len(result.Pkranges))
 	}
 
-	client.DeleteCollection(dbname, "table_not_found")
+	_deleteCollection(client, dbname, "table_not_found")
 	if result := client.GetPkranges(dbname, "table_not_found"); result.CallErr != nil {
 		t.Fatalf("%s failed: %s", name, result.CallErr)
 	} else if result.StatusCode != 404 {
 		t.Fatalf("%s failed: <status-code> expected %#v but received %#v", name, 404, result.StatusCode)
 	}
 
-	client.DeleteDatabase("db_not_found")
+	_deleteDatabase(client, "db_not_found")
 	if result := client.GetPkranges("db_not_found", collname); result.CallErr != nil {
 		t.Fatalf("%s failed: %s", name, result.CallErr)
 	} else if result.StatusCode != 404 {

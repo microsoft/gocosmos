@@ -18,7 +18,7 @@ func TestRestClient_CreateDatabase(t *testing.T) {
 		{Id: dbname, MaxRu: 10000},
 	}
 	for _, dbspec := range dbspecList {
-		client.DeleteDatabase(dbname)
+		_deleteDatabase(client, dbname)
 		var dbInfo gocosmos.DbInfo
 		if result := client.CreateDatabase(dbspec); result.Error() != nil {
 			t.Fatalf("%s failed: %s", name, result.Error())
@@ -57,7 +57,7 @@ func TestRestClient_ChangeOfferDatabase(t *testing.T) {
 
 	dbname := testDb
 	dbspec := gocosmos.DatabaseSpec{Id: dbname, Ru: 400}
-	client.DeleteDatabase(dbname)
+	_deleteDatabase(client, dbname)
 	var dbInfo gocosmos.DbInfo
 	if result := client.CreateDatabase(dbspec); result.Error() != nil {
 		t.Fatalf("%s failed: %s", name, result.Error())
@@ -150,7 +150,7 @@ func TestRestClient_ChangeOfferDatabaseInvalid(t *testing.T) {
 	client := _newRestClient(t, name)
 
 	dbname := testDb
-	client.DeleteDatabase(dbname)
+	_deleteDatabase(client, dbname)
 	dbspec := gocosmos.DatabaseSpec{Id: dbname}
 	var dbInfo gocosmos.DbInfo
 	if result := client.CreateDatabase(dbspec); result.Error() != nil {
@@ -193,7 +193,7 @@ func TestRestClient_DeleteDatabase(t *testing.T) {
 	client := _newRestClient(t, name)
 
 	dbname := testDb
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname, Ru: 400, MaxRu: 0})
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname, Ru: 400, MaxRu: 0})
 	if result := client.DeleteDatabase(dbname); result.Error() != nil {
 		t.Fatalf("%s failed: %s", name, result.Error())
 	}
@@ -209,8 +209,8 @@ func TestRestClient_GetDatabase(t *testing.T) {
 	client := _newRestClient(t, name)
 
 	dbname := testDb
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname, Ru: 400, MaxRu: 0})
-	client.DeleteDatabase("db_not_found")
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname, Ru: 400, MaxRu: 0})
+	_deleteDatabase(client, "db_not_found")
 	if result := client.GetDatabase(dbname); result.Error() != nil {
 		t.Fatalf("%s failed: %s", name, result.Error())
 	} else if result.Id != dbname {
@@ -232,13 +232,13 @@ func TestRestClient_ListDatabases(t *testing.T) {
 	dbnames := []string{"db1", "db2", "db3", "db4", "db5"}
 	defer func() {
 		for _, dbname := range dbnames {
-			client.DeleteDatabase(dbname)
+			_deleteDatabase(client, dbname)
 		}
 	}()
 	dbnamesMap := make(map[string]int)
 	for _, dbname := range dbnames {
 		dbnamesMap[dbname] = 1
-		client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname, Ru: 400, MaxRu: 0})
+		_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname, Ru: 400, MaxRu: 0})
 	}
 
 	if result := client.ListDatabases(); result.Error() != nil {

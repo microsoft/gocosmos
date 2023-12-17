@@ -15,9 +15,8 @@ func TestRestClient_CreateDocument_SubPartitions(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/app", "/username"}, "kind": "MultiHash", "version": 2},
@@ -83,9 +82,8 @@ func TestRestClient_CreateDocumentNoId_SubPartitions(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/app", "/username"}, "kind": "MultiHash", "version": 2},
@@ -118,9 +116,8 @@ func TestRestClient_UpsertDocument_SubPartitions(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/app", "/username"}, "kind": "MultiHash", "version": 2},
@@ -176,9 +173,8 @@ func TestRestClient_UpsertDocumentNoId_SubPartitions(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/app", "/username"}, "kind": "MultiHash", "version": 2},
@@ -212,9 +208,8 @@ func TestRestClient_ReplaceDocument_SubPartitions(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/app", "/username"}, "kind": "MultiHash", "version": 2},
@@ -295,9 +290,8 @@ func TestRestClient_ReplaceDocumentCrossPartitions_SubPartitions(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/app", "/username"}, "kind": "MultiHash", "version": 2},
@@ -335,9 +329,8 @@ func TestRestClient_GetDocument_SubPartitions(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/app", "/username"}, "kind": "MultiHash", "version": 2},
@@ -403,9 +396,8 @@ func TestRestClient_DeleteDocument_SubPartitions(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/app", "/username"}, "kind": "MultiHash", "version": 2},

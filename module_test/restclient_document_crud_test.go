@@ -15,9 +15,8 @@ func TestRestClient_CreateDocument(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/username"}, "kind": "Hash"},
@@ -87,7 +86,7 @@ func TestRestClient_CreateDocument(t *testing.T) {
 	}
 
 	// database not found
-	client.DeleteDatabase("db_not_found")
+	_deleteDatabase(client, "db_not_found")
 	if result := client.CreateDocument(gocosmos.DocumentSpec{
 		DbName: "db_not_found", CollName: collname, PartitionKeyValues: []interface{}{"user"},
 		DocumentData: map[string]interface{}{"id": "1", "username": "user", "email": "user@domain.com", "grade": 1, "active": true},
@@ -104,9 +103,8 @@ func TestRestClient_CreateDocumentNoId(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/username"}, "kind": "Hash"},
@@ -139,9 +137,8 @@ func TestRestClient_UpsertDocument(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/username"}, "kind": "Hash"},
@@ -201,7 +198,7 @@ func TestRestClient_UpsertDocument(t *testing.T) {
 	}
 
 	// database not found
-	client.DeleteDatabase("db_not_found")
+	_deleteDatabase(client, "db_not_found")
 	if result := client.CreateDocument(gocosmos.DocumentSpec{
 		DbName: "db_not_found", CollName: collname, PartitionKeyValues: []interface{}{"user"}, IsUpsert: true,
 		DocumentData: map[string]interface{}{"id": "1", "username": "user", "email": "user@domain.com", "grade": 1, "active": true},
@@ -218,9 +215,8 @@ func TestRestClient_UpsertDocumentNoId(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/username"}, "kind": "Hash"},
@@ -254,9 +250,8 @@ func TestRestClient_ReplaceDocument(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/username"}, "kind": "Hash"},
@@ -339,7 +334,7 @@ func TestRestClient_ReplaceDocument(t *testing.T) {
 	}
 
 	// database not found
-	client.DeleteDatabase("db_not_found")
+	_deleteDatabase(client, "db_not_found")
 	if result := client.ReplaceDocument("", gocosmos.DocumentSpec{DbName: "db_not_found", CollName: collname, PartitionKeyValues: []interface{}{"user"}, DocumentData: docInfo}); result.CallErr != nil {
 		t.Fatalf("%s failed: %s", name, result.CallErr)
 	} else if result.StatusCode != 404 {
@@ -353,9 +348,8 @@ func TestRestClient_ReplaceDocumentCrossPartitions(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/username"}, "kind": "Hash"},
@@ -393,9 +387,8 @@ func TestRestClient_GetDocument(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/username"}, "kind": "Hash"},
@@ -460,7 +453,7 @@ func TestRestClient_GetDocument(t *testing.T) {
 		t.Fatalf("%s failed: <status-code> expected %#v but received %#v", name, 404, result.StatusCode)
 	}
 
-	client.DeleteDatabase("db_not_found")
+	_deleteDatabase(client, "db_not_found")
 	if result := client.GetDocument(gocosmos.DocReq{DbName: "db_not_found", CollName: collname, DocId: "1", PartitionKeyValues: []interface{}{"user"}}); result.CallErr != nil {
 		t.Fatalf("%s failed: %s", name, result.CallErr)
 	} else if result.StatusCode != 404 {
@@ -474,9 +467,8 @@ func TestRestClient_DeleteDocument(t *testing.T) {
 
 	dbname := testDb
 	collname := testTable
-	client.DeleteDatabase(dbname)
-	client.CreateDatabase(gocosmos.DatabaseSpec{Id: dbname})
-	client.CreateCollection(gocosmos.CollectionSpec{
+	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: dbname})
+	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           dbname,
 		CollName:         collname,
 		PartitionKeyInfo: map[string]interface{}{"paths": []string{"/username"}, "kind": "Hash"},
@@ -519,7 +511,7 @@ func TestRestClient_DeleteDocument(t *testing.T) {
 		t.Fatalf("%s failed: <status-code> expected %#v but received %#v", name, 404, result.StatusCode)
 	}
 
-	client.DeleteDatabase("db_not_found")
+	_deleteDatabase(client, "db_not_found")
 	if result := client.DeleteDocument(gocosmos.DocReq{DbName: "db_not_found", CollName: collname, DocId: "1", PartitionKeyValues: []interface{}{"user"}}); result.CallErr != nil {
 		t.Fatalf("%s failed: %s", name, result.CallErr)
 	} else if result.StatusCode != 404 {
