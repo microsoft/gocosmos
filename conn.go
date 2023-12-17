@@ -26,7 +26,7 @@ func (c *Conn) Prepare(query string) (driver.Stmt, error) {
 //
 // @Available since v0.2.1
 func (c *Conn) PrepareContext(_ context.Context, query string) (driver.Stmt, error) {
-	return parseQueryWithDefaultDb(c, c.defaultDb, query)
+	return ParseQueryWithDefaultDb(c, c.defaultDb, query)
 }
 
 // Close implements driver.Conn/Close.

@@ -34,11 +34,10 @@ var (
 	reDelete = regexp.MustCompile(`(?is)^DELETE\s+FROM\s+(` + field + `\.)?` + field + `\s+WHERE\s+id\s*=\s*(.*?)` + with + `$`)
 )
 
-//func parseQuery(c *Conn, query string) (driver.Stmt, error) {
-//	return parseQueryWithDefaultDb(c, "", query)
-//}
-
-func parseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, error) {
+// ParseQueryWithDefaultDb parses the given query and returns a Stmt.
+//
+// @Available since <<VERSION>>
+func ParseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, error) {
 	query = strings.TrimSpace(query)
 	if re := reCreateDb; re.MatchString(query) {
 		groups := re.FindAllStringSubmatch(query, -1)
