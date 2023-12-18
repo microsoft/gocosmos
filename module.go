@@ -8,3 +8,5 @@ const (
 
 // This file contains module's metadata only, which is package level documentation and module Version string.
 // Module's code should go into other files.
+
+// Migrated from btnguyen2k/gocosmos v0.3.0
