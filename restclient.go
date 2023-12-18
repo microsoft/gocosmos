@@ -151,16 +151,21 @@ func (c *RestClient) addAuthHeader(req *http.Request, method, resType, resId str
 }
 
 func (c *RestClient) buildRestResponse(resp *gjrc.GjrcResponse) RestResponse {
-	result := RestResponse{CallErr: resp.Error()}
-	if result.CallErr == nil {
-		result.StatusCode = resp.StatusCode()
-		result.RespBody, _ = resp.Body()
-		result.RespHeader = make(map[string]string)
-		for k, v := range resp.HttpResponse().Header {
-			if len(v) > 0 {
-				result.RespHeader[strings.ToUpper(k)] = v[0]
-			}
+	result := RestResponse{
+		CallErr:    resp.Error(),
+		StatusCode: resp.StatusCode(),
+		RespHeader: make(map[string]string),
+	}
+	result.RespBody, _ = resp.Body()
+	for k, v := range resp.HttpResponse().Header {
+		if len(v) > 0 {
+			result.RespHeader[strings.ToUpper(k)] = v[0]
 		}
+	}
+
+	if result.CallErr != nil {
+		result.CallErr = fmt.Errorf("status-code: %d / error: %s / response-body: %s", result.StatusCode, result.CallErr, result.RespBody)
+	} else if result.CallErr == nil {
 		if v, err := strconv.ParseFloat(result.RespHeader[respHeaderRequestCharge], 64); err == nil {
 			result.RequestCharge = v
 		} else {
