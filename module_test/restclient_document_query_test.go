@@ -108,9 +108,15 @@ func _verifyResultRespQueryDocs(f funcTestFatal, testName string, testCase query
 	}
 	if testCase.groupByAggr == "" {
 		if testCase.maxItemCount > 0 && expectedNumItems <= 0 && (len(queryResult.Documents) > testCase.maxItemCount || queryResult.Count > testCase.maxItemCount) {
+			for _, doc := range queryResult.Documents {
+				fmt.Printf("[DEBUG] %#v\n", doc)
+			}
 			f(fmt.Sprintf("%s failed: <num-document> expected not exceeding %#v but received (len: %#v / count: %#v)", testName, testCase.maxItemCount, len(queryResult.Documents), queryResult.Count))
 		}
 		if (testCase.maxItemCount <= 0 || expectedNumItems > 0) && (len(queryResult.Documents) != expectedNumItems || queryResult.Count != expectedNumItems) {
+			for _, doc := range queryResult.Documents {
+				fmt.Printf("[DEBUG] %#v\n", doc)
+			}
 			f(fmt.Sprintf("%s failed: <num-document> expected %#v but received (len: %#v / count: %#v)", testName, expectedNumItems, len(queryResult.Documents), queryResult.Count))
 		}
 	}
@@ -119,6 +125,9 @@ func _verifyResultRespQueryDocs(f funcTestFatal, testName string, testCase query
 			docInfo := queryResult.Documents.AsDocInfoAt(i)
 			id, _ := strconv.Atoi(docInfo.Id())
 			if !reflect.DeepEqual(docInfo.RemoveSystemAttrs(), dataList[id]) {
+				for _, doc := range queryResult.Documents {
+					fmt.Printf("[DEBUG] %#v\n", doc)
+				}
 				f(fmt.Sprintf("%s failed: %#v-th document expected to be\n%#v\nbut received\n%#v", testName, i, dataList[id], docInfo.RemoveSystemAttrs()))
 			}
 		}
