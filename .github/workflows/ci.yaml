@@ -67,7 +67,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           tag-major-release: false
           tag-minor-release: false
-          branches: ${{ vars.GITHUB_REF_NAME }}
+          branches: ${{ vars.GITHUB_REF }}
           tag-prefix: ${{ env.TAG_PREFIX }}
           tag-only: true
 
