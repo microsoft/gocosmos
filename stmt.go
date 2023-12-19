@@ -36,7 +36,7 @@ var (
 
 // ParseQueryWithDefaultDb parses the given query and returns a Stmt.
 //
-// @Available since <<VERSION>>
+// @Available since v1.0.0
 func ParseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, error) {
 	query = strings.TrimSpace(query)
 	if re := reCreateDb; re.MatchString(query) {
