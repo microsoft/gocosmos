@@ -58,6 +58,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
+      - name: Dummy
+        run: |
+          echo "vars.GITHUB_REF:" ${{ vars.GITHUB_REF }} " / " ${{ github.ref }}
+          echo "vars.GITHUB_REF_NAME:" ${{ vars.GITHUB_REF_NAME }} " / " ${{ github.ref_name }}
       - name: Release (dry-run)
         id: release_dry_run
         uses: btnguyen2k/action-semrelease@v3
@@ -67,7 +71,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           tag-major-release: false
           tag-minor-release: false
-          branches: ${{ vars.GITHUB_REF }}
+          branches: ${{ github.ref }}
           tag-prefix: ${{ env.TAG_PREFIX }}
           tag-only: true
 
