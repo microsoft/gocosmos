@@ -1,5 +1,11 @@
 # gocosmos - Release notes
 
+## 2023-12-19 - v1.0.1
+
+### Fixed/Improvement
+
+- Fix: server may return status 304 without body
+
 ## 2023-12-19 - v1.0.0
 
 ### Changed
