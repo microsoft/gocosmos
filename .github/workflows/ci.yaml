@@ -6,6 +6,9 @@ on:
   pull_request:
     types: [ opened, edited, reopened, synchronize, review_requested ]
     branches: [ '*' ]
+  schedule:
+    # run once every month (at 00:00 UTC) to make sure the driver works with latest version of Go and CosmosDB emulator
+    - cron: '0 0 1 * *'
   workflow_call:
 
 env:
@@ -46,7 +49,6 @@ jobs:
   ReleaseDryRun:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    needs: [ GoFmt, GoLint ]
     outputs:
       RESULT: ${{ steps.release_dry_run.outputs.result }}
       VERSION: ${{ steps.release_dry_run.outputs.releaseVersion }}
