@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -74,6 +75,7 @@ type StmtCRUD struct {
 	collName       string
 	numPkPaths     int // number of PK paths
 	isSinglePathPk bool
+	pk             string
 }
 
 func (s *StmtCRUD) extractPkValuesFromArgs(args ...driver.Value) []interface{} {
@@ -108,6 +110,12 @@ func (s *StmtCRUD) parseWithOpts(withOptsStr string) error {
 	if err := s.onlyOneWithOption("single PK path is specified more than once, only one of SINGLE_PK or SINGLEPK should be specified", "SINGLE_PK", "SINGLEPK"); err != nil {
 		return err
 	}
+	if err := s.onlyOneWithOption("PK and SINGLE_PK/SINGLEPK must not be used together", "PK", "SINGLEPK"); err != nil {
+		return err
+	}
+	if err := s.onlyOneWithOption("PK and SINGLE_PK/SINGLEPK must not be used together", "PK", "SINGLE_PK"); err != nil {
+		return err
+	}
 
 	for k, v := range s.withOpts {
 		switch k {
@@ -121,10 +129,13 @@ func (s *StmtCRUD) parseWithOpts(withOptsStr string) error {
 				}
 				s.isSinglePathPk = true
 			}
+		case "PK":
+			s.pk = v
 		}
 	}
-
-	if s.isSinglePathPk {
+	if pkPaths := strings.Split(s.pk, ","); s.pk != "" && len(pkPaths) > 0 {
+		s.numPkPaths = len(pkPaths)
+	} else if s.isSinglePathPk {
 		s.numPkPaths = 1
 	}
 	s.numInput = 0
@@ -171,7 +182,7 @@ func (s *StmtInsert) parse(withOptsStr string) error {
 	}
 
 	for k := range s.withOpts {
-		if k != "SINGLE_PK" && k != "SINGLEPK" {
+		if k != "SINGLE_PK" && k != "SINGLEPK" && k != "PK" {
 			return fmt.Errorf("invalid query, parsing error at WITH %s", k)
 		}
 	}
@@ -200,6 +211,9 @@ func (s *StmtInsert) validate() error {
 	}
 	if s.dbName == "" || s.collName == "" {
 		return errors.New("database/collection is missing")
+	}
+	if s.isSinglePathPk {
+		_, _ = fmt.Fprintf(os.Stderr, "[WARN] singlePK/SINGLE_PK is deprecated, please use PK instead\n")
 	}
 	return nil
 }
