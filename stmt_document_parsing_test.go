@@ -31,7 +31,7 @@ db1.table1 (a, b, c, d, e,
 f) VALUES
 	(null, 1.0, 
 true, "\"a string 'with' \\\"quote\\\"\"", "{\"key\":\"value\"}", "[2.0,null,false,\"a string 'with' \\\"quote\\\"\"]")`,
-			expected: &StmtInsert{StmtCRUD: &StmtCRUD{dbName: "db1", collName: "table1"}, fields: []string{"a", "b", "c", "d", "e", "f"}, values: []interface{}{nil, 1.0, true, `a string 'with' "quote"`, map[string]interface{}{"key": "value"}, []interface{}{2.0, nil, false, `a string 'with' "quote"`}}},
+			expected: &StmtInsert{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 0}, dbName: "db1", collName: "table1"}, fields: []string{"a", "b", "c", "d", "e", "f"}, values: []interface{}{nil, 1.0, true, `a string 'with' "quote"`, map[string]interface{}{"key": "value"}, []interface{}{2.0, nil, false, `a string 'with' "quote"`}}},
 		},
 		{
 			name: "with_placeholders",
@@ -39,27 +39,27 @@ true, "\"a string 'with' \\\"quote\\\"\"", "{\"key\":\"value\"}", "[2.0,null,fal
 INTO db-2.table_2 (
 a,b,c) VALUES (
 $1, :3, @2)`,
-			expected: &StmtInsert{StmtCRUD: &StmtCRUD{dbName: "db-2", collName: "table_2"}, fields: []string{"a", "b", "c"}, values: []interface{}{placeholder{1}, placeholder{3}, placeholder{2}}},
+			expected: &StmtInsert{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 3}, dbName: "db-2", collName: "table_2"}, fields: []string{"a", "b", "c"}, values: []interface{}{placeholder{1}, placeholder{3}, placeholder{2}}},
 		},
 		{
 			name:     "singlepk",
 			sql:      `INSERT INTO db.table (a,b,c) VALUES (1,2,3) WITH singlePK`,
-			expected: &StmtInsert{StmtCRUD: &StmtCRUD{dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, fields: []string{"a", "b", "c"}, values: []interface{}{1.0, 2.0, 3.0}},
+			expected: &StmtInsert{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 0}, dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, fields: []string{"a", "b", "c"}, values: []interface{}{1.0, 2.0, 3.0}},
 		},
 		{
 			name:     "single_pk",
 			sql:      `INSERT INTO db.table (a,b,c) VALUES (:1,$2,3) WITH SINGLE_PK`,
-			expected: &StmtInsert{StmtCRUD: &StmtCRUD{dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, fields: []string{"a", "b", "c"}, values: []interface{}{placeholder{1}, placeholder{2}, 3.0}},
+			expected: &StmtInsert{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 2}, dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, fields: []string{"a", "b", "c"}, values: []interface{}{placeholder{1}, placeholder{2}, 3.0}},
 		},
 		{
 			name:     "singlepk2",
 			sql:      `INSERT INTO db.table (a,b,c) VALUES (1,2,3) WITH singlePK=true`,
-			expected: &StmtInsert{StmtCRUD: &StmtCRUD{dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, fields: []string{"a", "b", "c"}, values: []interface{}{1.0, 2.0, 3.0}},
+			expected: &StmtInsert{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 0}, dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, fields: []string{"a", "b", "c"}, values: []interface{}{1.0, 2.0, 3.0}},
 		},
 		{
 			name:     "single_pk2",
 			sql:      `INSERT INTO db.table (a,b,c) VALUES (:1,$2,3) WITH SINGLE_PK=true`,
-			expected: &StmtInsert{StmtCRUD: &StmtCRUD{dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, fields: []string{"a", "b", "c"}, values: []interface{}{placeholder{1}, placeholder{2}, 3.0}},
+			expected: &StmtInsert{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 2}, dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, fields: []string{"a", "b", "c"}, values: []interface{}{placeholder{1}, placeholder{2}, 3.0}},
 		},
 		{
 			name:      "error_singlepk_single_pk",
@@ -74,6 +74,31 @@ $1, :3, @2)`,
 		{
 			name:      "error_invalid_single_pk",
 			sql:       `INSERT INTO db.table (a,b,c) VALUES (:1,$2,3) WITH SINGLE_PK=error`,
+			mustError: true,
+		},
+		{
+			name:     "repeated_placeholders",
+			sql:      `INSERT INTO db.table (a,b,c) VALUES (:1,$1,@1)`,
+			expected: &StmtInsert{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 1}, dbName: "db", collName: "table"}, fields: []string{"a", "b", "c"}, values: []interface{}{placeholder{1}, placeholder{1}, placeholder{1}}},
+		},
+		{
+			name:     "high_placeholders",
+			sql:      `INSERT INTO db.table (a,b,c) VALUES (1,2,$5)`,
+			expected: &StmtInsert{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 5}, dbName: "db", collName: "table"}, fields: []string{"a", "b", "c"}, values: []interface{}{1.0, 2.0, placeholder{5}}},
+		},
+		{
+			name:     "with_pk",
+			sql:      `INSERT INTO db.table (a,b,c) VALUES (:1,$2,3) WITH pk=/mypk`,
+			expected: &StmtInsert{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 2}, dbName: "db", collName: "table", numPkPaths: 1, pk: "/mypk", pkPaths: []string{"/mypk"}}, fields: []string{"a", "b", "c"}, values: []interface{}{placeholder{1}, placeholder{2}, 3.0}},
+		},
+		{
+			name:     "with_pk_subpartition",
+			sql:      `INSERT INTO db.table (a,b,c) VALUES (:1,$2,3) WITH PK=/TenantId,/UserId,/SessionId`,
+			expected: &StmtInsert{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 2}, dbName: "db", collName: "table", numPkPaths: 3, pk: "/TenantId,/UserId,/SessionId", pkPaths: []string{"/TenantId", "/UserId", "/SessionId"}}, fields: []string{"a", "b", "c"}, values: []interface{}{placeholder{1}, placeholder{2}, 3.0}},
+		},
+		{
+			name:      "with_pk_singlepk",
+			sql:       `INSERT INTO db.table (a,b,c) VALUES (:1,$2,3) WITH pk=/mypk WITH SINGLE_PK`,
 			mustError: true,
 		},
 	}
@@ -93,11 +118,12 @@ $1, :3, @2)`,
 			if !ok {
 				t.Fatalf("%s failed: expected StmtInsert but received %T", testName+"/"+testCase.name, s)
 			}
-			stmt.Stmt = nil
+			stmt.Stmt = &Stmt{numInputs: stmt.numInputs}
 			stmt.fieldsStr = ""
 			stmt.valuesStr = ""
 			if !reflect.DeepEqual(stmt, testCase.expected) {
-				t.Fatalf("%s failed:\nexpected %#v/%#v\nreceived %#v/%#v", testName+"/"+testCase.name, testCase.expected.StmtCRUD, testCase.expected, stmt.StmtCRUD, stmt)
+				//t.Fatalf("%s failed:\nexpected %#v/%#v\nreceived %#v/%#v", testName+"/"+testCase.name, testCase.expected.StmtCRUD, testCase.expected, stmt.StmtCRUD, stmt)
+				t.Fatalf("%s failed:\nexpected %s\nreceived %s", testName+"/"+testCase.name, testCase.expected, stmt)
 			}
 		})
 	}
