@@ -38,7 +38,7 @@ func _parseValue(input string, separator rune) (value interface{}, leftOver stri
 		var data interface{}
 		err := json.Unmarshal([]byte(token), &data)
 		if err != nil {
-			err = errors.New("(nul) cannot parse query, invalid token at: " + token)
+			err = errors.New("(number) cannot parse query, invalid token at: " + token)
 		}
 		return data, input[loc[1]:], err
 	}
@@ -46,9 +46,9 @@ func _parseValue(input string, separator rune) (value interface{}, leftOver stri
 		token := strings.TrimFunc(input[loc[0]:loc[1]], func(r rune) bool { return _isSpace(r) || r == separator })
 		var data bool
 		err := json.Unmarshal([]byte(token), &data)
-		// if err != nil {
-		// 	err = errors.New("(bool) cannot parse query, invalid token at: " + token)
-		// }
+		if err != nil {
+			err = errors.New("(bool) cannot parse query, invalid token at: " + token)
+		}
 		return data, input[loc[1]:], err
 	}
 	if loc := reValString.FindStringIndex(input); loc != nil && loc[0] == 0 {
@@ -99,9 +99,6 @@ func (s *StmtCRUD) extractPkValuesFromArgs(args ...driver.Value) []interface{} {
 
 func (s *StmtCRUD) fetchPkInfo() error {
 	if s.numPkPaths > 0 || s.conn == nil || s.isSinglePathPk {
-		//if s.isSinglePathPk {
-		//	s.numPkPaths = 1
-		//}
 		return nil
 	}
 
@@ -279,9 +276,6 @@ func (s *StmtInsert) Exec(args []driver.Value) (driver.Result, error) {
 	for i, pkValue := range pkValues {
 		switch v := pkValue.(type) {
 		case placeholder:
-			//if v.index <= 0 || v.index > len(args) {
-			//	return nil, fmt.Errorf("parameter index is out of range %d", v.index)
-			//}
 			spec.PartitionKeyValues[i] = args[v.index-1]
 		default:
 			spec.PartitionKeyValues[i] = pkValue
@@ -290,9 +284,6 @@ func (s *StmtInsert) Exec(args []driver.Value) (driver.Result, error) {
 	for i, field := range s.fields {
 		switch v := s.values[i].(type) {
 		case placeholder:
-			//if v.index <= 0 || v.index > len(args) {
-			//	return nil, fmt.Errorf("parameter index is out of range %d", v.index)
-			//}
 			spec.DocumentData[field] = args[v.index-1]
 		default:
 			spec.DocumentData[field] = s.values[i]

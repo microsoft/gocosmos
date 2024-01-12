@@ -148,7 +148,7 @@ Syntax:
 
 ```sql
 CREATE COLLECTION [IF NOT EXISTS] [<db-name>.]<collection-name>
-<WITH PK=partitionKey>
+<WITH PK=partition-key>
 [[,] WITH RU|MAXRU=ru]
 [[,] WITH UK=/path1:/path2,/path3;/path4]
 ```
@@ -299,26 +299,27 @@ Syntax:
 INSERT INTO [<db-name>.]<collection-name>
 (<field1>, <field2>,...<fieldN>)
 VALUES (<value1>, <value2>,...<valueN>)
-[WITH singlePK|SINGLE_PK[=true]]
+[WITH PK=<partition-key>]
 ```
 
-> `<db-name>` can be omitted if `DefaultDb` is supplied in the Data Source Name (DSN).
-
-Since [v0.3.0](RELEASE-NOTES.md), `gocosmos` supports [Hierarchical Partition Keys](https://learn.microsoft.com/en-us/azure/cosmos-db/hierarchical-partition-keys) (or sub-partitions). If the collection is known not to have sub-partitions, supplying `WITH singlePK` (or `WITH SINGLE_PK`) can save one roundtrip to Cosmos DB server.
+> `<db-name>` can be omitted if `DefaultDb` is supplied in the [Data Source Name (DSN)](README.md#example-usage).
 
 Example:
 ```go
-sql := `INSERT INTO mydb.mytable (a, b, c, d, e) VALUES (1, "\"a string\"", :1, @2, $3)`
-dbresult, err := db.Exec(sql, true, []interface{}{1, true, nil, "string"}, map[string]interface{}{"key":"value"}, "mypk")
+sql := `INSERT INTO mydb.mytable (id, a, b, c, d) VALUES (1, "\"a string\"", :1, @2, $3) WITH pk=/id`
+params := []interface{}{
+	true, // value for :1 
+	[]interface{}{1, true, nil, "string"}, // value for @2 
+	map[string]interface{}{"key":"value"}, // value for $3
+}
+dbresult, err := db.Exec(sql, params...)
 if err != nil {
 	panic(err)
 }
-fmt.Println(dbresult.RowsAffected())
+fmt.Println(dbresult.RowsAffected()) // output 1
 ```
 
-> Use `sql.DB.Exec` to execute the statement, `Query` will return error.
-
-> Values of partition keys _must_ be supplied at the end of the argument list when invoking `db.Exec()`.
+> Use `sql.DB.Exec` to execute the statement, `Query` will return error!
 
 <a id="value"></a>A value is either:
 - a placeholder - which is a number prefixed by `$` or `@` or `:`, for example `$1`, `@2` or `:3`. Placeholders are 1-based index, that means starting from 1.
@@ -333,6 +334,14 @@ fmt.Println(dbresult.RowsAffected())
     - a map value in JSON (include the double quotes), for example `"{\"key\":\"value\"}"`
     - a list value in JSON (include the double quotes), for example `"[1,true,null,\"string\"]"`
 
+**Since <<VERSION>>**:
+
+- `WITH SINGLE_PK` is deprecated, use `WITH PK=/pkey` (or `WITH PK=/pkey1,/pkey2` if [Hierarchical Partition Keys](https://learn.microsoft.com/en-us/azure/cosmos-db/hierarchical-partition-keys), or sub-partitions, is used on the collection) instead.
+- Supplying values for partition key at the end of parameter lis is no longer required, but still supported for backward compatibility.
+
+> `gocosmos` automatically discovers PK of the collection by fetching metadata from server.
+> Using `WITH PK` will save one round-trip to Cosmos DB server as fetching medata is not needed.
+
 [Back to top](#top)
 
 #### UPSERT
@@ -345,7 +354,7 @@ Syntax & Usage: similar to [INSERT](#insert).
 UPSERT INTO [<db-name>.]<collection-name>
 (<field1>, <field2>,...<fieldN>)
 VALUES (<value1>, <value2>,...<valueN>)
-[WITH singlePK|SINGLE_PK[=true]]
+[WITH PK=<partition-key>]
 ```
 
 [Back to top](#top)
