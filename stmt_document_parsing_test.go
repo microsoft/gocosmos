@@ -88,7 +88,7 @@ $1, :3, @2)`,
 		},
 		{
 			name:     "with_pk",
-			sql:      `INSERT INTO db.table (a,b,c) VALUES (:1,$2,3) WITH withPk=/mypk`,
+			sql:      `INSERT INTO db.table (a,b,c) VALUES (:1,$2,3) WITH pk=/mypk`,
 			expected: &StmtInsert{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 2}, dbName: "db", collName: "table", numPkPaths: 1, withPk: "/mypk", pkPaths: []string{"/mypk"}}, fields: []string{"a", "b", "c"}, values: []interface{}{placeholder{1}, placeholder{2}, 3.0}},
 		},
 		{
@@ -98,7 +98,7 @@ $1, :3, @2)`,
 		},
 		{
 			name:      "with_pk_singlepk",
-			sql:       `INSERT INTO db.table (a,b,c) VALUES (:1,$2,3) WITH withPk=/mypk WITH SINGLE_PK`,
+			sql:       `INSERT INTO db.table (a,b,c) VALUES (:1,$2,3) WITH Pk=/mypk WITH SINGLE_PK`,
 			mustError: true,
 		},
 	}
@@ -512,7 +512,7 @@ db1.table1 WHERE
 
 		{
 			name:     "where_pk",
-			sql:      `DELETE FROM db.table WHERE id=1 and withPk=abc`,
+			sql:      `DELETE FROM db.table WHERE id=1 and pk=abc`,
 			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{}, dbName: "db", collName: "table", numPkPaths: 1, pkPaths: []string{"/withPk"}}, id: 1.0, pkValues: []interface{}{"abc"}},
 		},
 		{
