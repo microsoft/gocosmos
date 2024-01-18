@@ -85,7 +85,7 @@ jobs:
             echo ========== update .go/.md files ==========
             sed -i -E "s/<<VERSION>>/v${VERSION}/" ./*.go
             sed -i -E "s/<<VERSION>>/v${VERSION}/" ./*.md
-g
+
             echo ========== commit updates ==========
             git config --global user.email "<>"
             git config --global user.name "CI Build"
