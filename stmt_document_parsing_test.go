@@ -513,7 +513,7 @@ db1.table1 WHERE
 		{
 			name:     "where_pk",
 			sql:      `DELETE FROM db.table WHERE id=1 and pk=abc`,
-			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{}, dbName: "db", collName: "table", numPkPaths: 1, pkPaths: []string{"/withPk"}}, id: 1.0, pkValues: []interface{}{"abc"}},
+			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{}, dbName: "db", collName: "table", numPkPaths: 1, pkPaths: []string{"/pk"}}, id: 1.0, pkValues: []interface{}{"abc"}},
 		},
 		{
 			name:     "where_pk_subpartitions",
