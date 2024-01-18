@@ -334,10 +334,36 @@ fmt.Println(dbresult.RowsAffected()) // output 1
     - a map value in JSON (include the double quotes), for example `"{\"key\":\"value\"}"`
     - a list value in JSON (include the double quotes), for example `"[1,true,null,\"string\"]"`
 
+Example:
+```sql
+INSERT INTO mydb.mytable (
+    id, 
+    anull,
+    anum, 
+    abool, 
+    jstring, 
+    jnum,
+    jbool,
+    jnull, 
+    jmap, 
+    jlist) VALUES (
+    :1,
+    NULL,
+    1.23,
+    true, 
+    "\"a string\"", 
+    "123", 
+    "true", 
+    "null", 
+    "{\"key1\":\"value\",\"key2\": 2.34, \"key3\": false, \"key4\": null}", 
+    "[1,true,null,\"string\"]"
+) WITH PK=/id
+```
+
 **Since <<VERSION>>**:
 
-- `WITH SINGLE_PK` is deprecated, use `WITH PK=/pkey` (or `WITH PK=/pkey1,/pkey2` if [Hierarchical Partition Keys](https://learn.microsoft.com/en-us/azure/cosmos-db/hierarchical-partition-keys), or sub-partitions, is used on the collection) instead.
-- Supplying values for partition key at the end of parameter lis is no longer required, but still supported for backward compatibility.
+- `WITH SINGLE_PK` is deprecated and will be _removed_ in future version! Instead, use `WITH PK=/pkey` (or `WITH PK=/pkey1,/pkey2` if [Hierarchical Partition Keys](https://learn.microsoft.com/en-us/azure/cosmos-db/hierarchical-partition-keys) - also known as sub-partitions - is used on the collection).
+- Supplying values for partition key at the end of parameter list is no longer required, but still supported for backward compatibility. This behaviour will be _removed_ in future version!
 
 > `gocosmos` automatically discovers PK of the collection by fetching metadata from server.
 > Using `WITH PK` will save one round-trip to Cosmos DB server as fetching medata is not needed.
@@ -346,7 +372,7 @@ fmt.Println(dbresult.RowsAffected()) // output 1
 
 #### UPSERT
 
-Description: insert a new document or replace an existing one.
+Description: insert a new document _or replace_ an existing one.
 
 Syntax & Usage: similar to [INSERT](#insert).
 
@@ -366,32 +392,35 @@ Description: delete an existing document.
 Syntax:
 
 ```sql
-DELETE FROM [<db-name>.]<collection-name>
+DELETE FROM <db-name>.<collection-name>
 WHERE id=<id-value>
-[WITH singlePK|SINGLE_PK[=true]]
+[AND pkfield1=<pk1-value> [AND pkfield2=<pk2-value> ...]]
 ```
 
 > `<db-name>` can be omitted if `DefaultDb` is supplied in the Data Source Name (DSN).
 
-`gocosmos` supports [Hierarchical Partition Keys](https://learn.microsoft.com/en-us/azure/cosmos-db/hierarchical-partition-keys) (or sub-partitions). If the collection is known not to have sub-partitions, supplying `WITH singlePK` (or `WITH SINGLE_PK`) can save one roundtrip to Cosmos DB server.
-
 Example:
 ```go
-sql := `DELETE FROM mydb.mytable WHERE id=@1`
+sql := `DELETE FROM mydb.mytable WHERE id=@1 AND pk=@2`
 dbresult, err := db.Exec(sql, "myid", "mypk")
 if err != nil {
 	panic(err)
 }
-fmt.Println(dbresult.RowsAffected())
+fmt.Println(dbresult.RowsAffected()) // output 1
 ```
 
 > Use `sql.DB.Exec` to execute the statement, `Query` will return error.
 
-> Values of partition keys _must_ be supplied at the end of the argument list when invoking `db.Exec()`.
 
+- The clause `WHERE id=<id-value>` is mandatory, and `id` is a keyword, _not_ a field name!
+- `id-value` and `pk-value` must follow the value syntax described [here](#value). Note: value for id should always be a string!
 - `DELETE` removes only one document specified by id.
 - Upon successful execution, `RowsAffected()` returns `(1, nil)`. If no document matched, `RowsAffected()` returns `(0, nil)`.
-- `<id-value>` is treated as string, i.e. `WHERE id=abc` has the same effect as `WHERE id="abc"`. A placeholder can be used in the place of `<id-value>`. See [here](#value) for more details on values and placeholders.
+
+**Since <<VERSION>>**:
+
+- `WITH SINGLE_PK` is deprecated and will be _removed_ in future version! Instead, use `AND pkfield=value` (or `AND pkfield1=value1 AND pkfield2=value2...` if [Hierarchical Partition Keys](https://learn.microsoft.com/en-us/azure/cosmos-db/hierarchical-partition-keys) - also known as sub-partitions - is used on the collection).
+- Supplying values for partition key at the end of parameter list is no longer required, but still supported for backward compatibility. This behaviour will be _removed_ in future version!
 
 [Back to top](#top)
 

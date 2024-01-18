@@ -88,17 +88,17 @@ $1, :3, @2)`,
 		},
 		{
 			name:     "with_pk",
-			sql:      `INSERT INTO db.table (a,b,c) VALUES (:1,$2,3) WITH pk=/mypk`,
-			expected: &StmtInsert{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 2}, dbName: "db", collName: "table", numPkPaths: 1, pk: "/mypk", pkPaths: []string{"/mypk"}}, fields: []string{"a", "b", "c"}, values: []interface{}{placeholder{1}, placeholder{2}, 3.0}},
+			sql:      `INSERT INTO db.table (a,b,c) VALUES (:1,$2,3) WITH withPk=/mypk`,
+			expected: &StmtInsert{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 2}, dbName: "db", collName: "table", numPkPaths: 1, withPk: "/mypk", pkPaths: []string{"/mypk"}}, fields: []string{"a", "b", "c"}, values: []interface{}{placeholder{1}, placeholder{2}, 3.0}},
 		},
 		{
 			name:     "with_pk_subpartition",
 			sql:      `INSERT INTO db.table (a,b,c) VALUES (:1,$2,3) WITH PK=/TenantId,/UserId,/SessionId`,
-			expected: &StmtInsert{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 2}, dbName: "db", collName: "table", numPkPaths: 3, pk: "/TenantId,/UserId,/SessionId", pkPaths: []string{"/TenantId", "/UserId", "/SessionId"}}, fields: []string{"a", "b", "c"}, values: []interface{}{placeholder{1}, placeholder{2}, 3.0}},
+			expected: &StmtInsert{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 2}, dbName: "db", collName: "table", numPkPaths: 3, withPk: "/TenantId,/UserId,/SessionId", pkPaths: []string{"/TenantId", "/UserId", "/SessionId"}}, fields: []string{"a", "b", "c"}, values: []interface{}{placeholder{1}, placeholder{2}, 3.0}},
 		},
 		{
 			name:      "with_pk_singlepk",
-			sql:       `INSERT INTO db.table (a,b,c) VALUES (:1,$2,3) WITH pk=/mypk WITH SINGLE_PK`,
+			sql:       `INSERT INTO db.table (a,b,c) VALUES (:1,$2,3) WITH withPk=/mypk WITH SINGLE_PK`,
 			mustError: true,
 		},
 	}
@@ -122,7 +122,6 @@ $1, :3, @2)`,
 			stmt.fieldsStr = ""
 			stmt.valuesStr = ""
 			if !reflect.DeepEqual(stmt, testCase.expected) {
-				//t.Fatalf("%s failed:\nexpected %#v/%#v\nreceived %#v/%#v", testName+"/"+testCase.name, testCase.expected.StmtCRUD, testCase.expected, stmt.StmtCRUD, stmt)
 				t.Fatalf("%s failed:\nexpected %s\nreceived %s", testName+"/"+testCase.name, testCase.expected, stmt)
 			}
 		})
@@ -431,6 +430,10 @@ a,b,c) VALUES ($1,
 	}
 }
 
+func TestDummy(t *testing.T) {
+	t.Logf("[DEBUG] %s", reDelete.String())
+}
+
 func TestStmtDelete_parse(t *testing.T) {
 	testName := "TestStmtDelete_parse"
 	testData := []struct {
@@ -454,42 +457,42 @@ func TestStmtDelete_parse(t *testing.T) {
 			sql: `DELETE FROM 
 db1.table1 WHERE 
 	id=abc`,
-			expected: &StmtDelete{StmtCRUD: &StmtCRUD{dbName: "db1", collName: "table1"}, idStr: "abc"},
+			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{}, dbName: "db1", collName: "table1", pkPaths: []string{}}, id: "abc", pkValues: []interface{}{}},
 		},
 		{
 			name: "basic2",
 			sql: `
-	DELETE 
-FROM db-2.table_2
-	WHERE     id="def"`,
-			expected: &StmtDelete{StmtCRUD: &StmtCRUD{dbName: "db-2", collName: "table_2"}, idStr: "def"},
+			DELETE
+		FROM db-2.table_2
+			WHERE     id="\"def\""`,
+			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{}, dbName: "db-2", collName: "table_2", pkPaths: []string{}}, id: "def", pkValues: []interface{}{}},
 		},
 		{
 			name: "basic3",
-			sql: `DELETE FROM 
-db_3-0.table-3_0 WHERE 
-	id=@2`,
-			expected: &StmtDelete{StmtCRUD: &StmtCRUD{dbName: "db_3-0", collName: "table-3_0"}, idStr: "@2", id: placeholder{2}},
+			sql: `DELETE FROM
+		db_3-0.table-3_0 WHERE
+			id=@2`,
+			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 2}, dbName: "db_3-0", collName: "table-3_0", pkPaths: []string{}}, id: placeholder{2}, pkValues: []interface{}{}},
 		},
 		{
 			name:     "singlepk",
-			sql:      `DELETE FROM db.table WHERE id=@2 WITH singlePK`,
-			expected: &StmtDelete{StmtCRUD: &StmtCRUD{dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, idStr: "@2", id: placeholder{2}},
+			sql:      `DELETE FROM db.table WHERE id=$1 WITH singlePK`,
+			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 1}, dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1, pkPaths: []string{}}, id: placeholder{1}, pkValues: []interface{}{}},
 		},
 		{
 			name:     "single_pk",
-			sql:      `DELETE FROM db.table WHERE id=@2 with Single_PK`,
-			expected: &StmtDelete{StmtCRUD: &StmtCRUD{dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, idStr: "@2", id: placeholder{2}},
+			sql:      `DELETE FROM db.table WHERE id=:3 with Single_PK`,
+			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 3}, dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1, pkPaths: []string{}}, id: placeholder{3}, pkValues: []interface{}{}},
 		},
 		{
-			name:     "singlepk2",
-			sql:      `DELETE FROM db.table WHERE id=@2 WITH singlePK=true`,
-			expected: &StmtDelete{StmtCRUD: &StmtCRUD{dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, idStr: "@2", id: placeholder{2}},
+			name:     "singlepk-2",
+			sql:      `DELETE FROM db.table WHERE id=:1 WITH singlePK=true`,
+			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 1}, dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1, pkPaths: []string{}}, id: placeholder{1}, pkValues: []interface{}{}},
 		},
 		{
-			name:     "single_pk",
-			sql:      `DELETE FROM db.table WHERE id=@2 with Single_PK=true`,
-			expected: &StmtDelete{StmtCRUD: &StmtCRUD{dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, idStr: "@2", id: placeholder{2}},
+			name:     "single_pk-2",
+			sql:      `DELETE FROM db.table WHERE id=@2 with Single_PK=True`,
+			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 2}, dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1, pkPaths: []string{}}, id: placeholder{2}, pkValues: []interface{}{}},
 		},
 		{
 			name:      "error_singlepk_single_pk",
@@ -505,6 +508,17 @@ db_3-0.table-3_0 WHERE
 			name:      "error_invalid_single_pk",
 			sql:       `DELETE FROM db.table WHERE id=@2 with Single_PK=error`,
 			mustError: true,
+		},
+
+		{
+			name:     "where_pk",
+			sql:      `DELETE FROM db.table WHERE id=1 and withPk=abc`,
+			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{}, dbName: "db", collName: "table", numPkPaths: 1, pkPaths: []string{"/withPk"}}, id: 1.0, pkValues: []interface{}{"abc"}},
+		},
+		{
+			name:     "where_pk_subpartitions",
+			sql:      `DELETE FROM db.table WHERE id=:3 AND app=$2 and Username=1`,
+			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 3}, dbName: "db", collName: "table", numPkPaths: 2, pkPaths: []string{"/app", "/Username"}}, id: placeholder{3}, pkValues: []interface{}{placeholder{2}, 1.0}},
 		},
 	}
 	for _, testCase := range testData {
@@ -523,9 +537,10 @@ db_3-0.table-3_0 WHERE
 			if !ok {
 				t.Fatalf("%s failed: expected StmtDelete but received %T", testName+"/"+testCase.name, s)
 			}
-			stmt.Stmt = nil
+			stmt.Stmt = &Stmt{numInputs: stmt.numInputs}
+			stmt.whereStr = "" // ignore
 			if !reflect.DeepEqual(stmt, testCase.expected) {
-				t.Fatalf("%s failed:\nexpected %#v\nreceived %#v", testName+"/"+testCase.name, testCase.expected, stmt)
+				t.Fatalf("%s failed:\nexpected %s\nreceived %s", testName+"/"+testCase.name, testCase.expected.StmtCRUD, stmt.StmtCRUD)
 			}
 		})
 	}
@@ -547,51 +562,51 @@ func TestStmtDelete_parse_defaultDb(t *testing.T) {
 		{
 			name: "basic",
 			db:   "mydb",
-			sql: `DELETE FROM 
-table1 WHERE 
+			sql: `DELETE FROM
+table1 WHERE
 	id=abc`,
-			expected: &StmtDelete{StmtCRUD: &StmtCRUD{dbName: "mydb", collName: "table1"}, idStr: "abc"},
+			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{}, dbName: "mydb", collName: "table1", pkPaths: []string{}}, id: "abc", pkValues: []interface{}{}},
 		},
 		{
 			name: "db_in_query",
 			db:   "mydb",
 			sql: `
-	DELETE 
+	DELETE
 FROM db-2.table_2
-	WHERE     id="def"`,
-			expected: &StmtDelete{StmtCRUD: &StmtCRUD{dbName: "db-2", collName: "table_2"}, idStr: "def"},
+	WHERE     id="\"def\""`,
+			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{}, dbName: "db-2", collName: "table_2", pkPaths: []string{}}, id: "def", pkValues: []interface{}{}},
 		},
 		{
 			name: "placeholder",
 			db:   "mydb",
-			sql: `DELETE FROM 
-db_3-0.table-3_0 WHERE 
-	id=@2`,
-			expected: &StmtDelete{StmtCRUD: &StmtCRUD{dbName: "db_3-0", collName: "table-3_0"}, idStr: "@2", id: placeholder{2}},
+			sql: `DELETE FROM
+		table-3_0 WHERE
+			id=@2`,
+			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 2}, dbName: "mydb", collName: "table-3_0", pkPaths: []string{}}, id: placeholder{2}, pkValues: []interface{}{}},
 		},
 		{
 			name:     "singlepk",
 			db:       "mydb",
-			sql:      `DELETE FROM table WHERE id=@2 With singlePk`,
-			expected: &StmtDelete{StmtCRUD: &StmtCRUD{dbName: "mydb", collName: "table", isSinglePathPk: true, numPkPaths: 1}, idStr: "@2", id: placeholder{2}},
+			sql:      `DELETE FROM table WHERE id=:1 With singlePk`,
+			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 1}, dbName: "mydb", collName: "table", isSinglePathPk: true, numPkPaths: 1, pkPaths: []string{}}, id: placeholder{1}, pkValues: []interface{}{}},
 		},
 		{
 			name:     "single_pk",
 			db:       "mydb",
-			sql:      `DELETE FROM db.table WHERE id=@2 With single_Pk`,
-			expected: &StmtDelete{StmtCRUD: &StmtCRUD{dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, idStr: "@2", id: placeholder{2}},
+			sql:      `DELETE FROM db.table WHERE id=$3 With single_Pk`,
+			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 3}, dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1, pkPaths: []string{}}, id: placeholder{3}, pkValues: []interface{}{}},
 		},
 		{
-			name:     "singlepk2",
+			name:     "singlepk-2",
 			db:       "mydb",
 			sql:      `DELETE FROM table WHERE id=@2 With singlePk=true`,
-			expected: &StmtDelete{StmtCRUD: &StmtCRUD{dbName: "mydb", collName: "table", isSinglePathPk: true, numPkPaths: 1}, idStr: "@2", id: placeholder{2}},
+			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 2}, dbName: "mydb", collName: "table", isSinglePathPk: true, numPkPaths: 1, pkPaths: []string{}}, id: placeholder{2}, pkValues: []interface{}{}},
 		},
 		{
 			name:     "single_pk2",
 			db:       "mydb",
 			sql:      `DELETE FROM db.table WHERE id=@2 With single_Pk=true`,
-			expected: &StmtDelete{StmtCRUD: &StmtCRUD{dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, idStr: "@2", id: placeholder{2}},
+			expected: &StmtDelete{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 2}, dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1, pkPaths: []string{}}, id: placeholder{2}, pkValues: []interface{}{}},
 		},
 		{
 			name:      "error_singlepk_single_pk",
@@ -628,9 +643,10 @@ db_3-0.table-3_0 WHERE
 			if !ok {
 				t.Fatalf("%s failed: expected StmtDelete but received %T", testName+"/"+testCase.name, s)
 			}
-			stmt.Stmt = nil
+			stmt.Stmt = &Stmt{numInputs: stmt.numInputs}
+			stmt.whereStr = "" // ignore
 			if !reflect.DeepEqual(stmt, testCase.expected) {
-				t.Fatalf("%s failed:\nexpected %#v\nreceived %#v", testName+"/"+testCase.name, testCase.expected, stmt)
+				t.Fatalf("%s failed:\nexpected %s\nreceived %s", testName+"/"+testCase.name, testCase.expected.StmtCRUD, stmt.StmtCRUD)
 			}
 		})
 	}

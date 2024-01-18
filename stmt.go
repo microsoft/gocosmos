@@ -31,7 +31,8 @@ var (
 	reInsert = regexp.MustCompile(`(?is)^(INSERT|UPSERT)\s+INTO\s+(` + field + `\.)?` + field + `\s*\(([^)]*?)\)\s*VALUES\s*\(([^)]*?)\)` + with + `$`)
 	reSelect = regexp.MustCompile(`(?is)^SELECT\s+(CROSS\s+PARTITION\s+)?.*?\s+FROM\s+` + field + `.*?` + with + `$`)
 	reUpdate = regexp.MustCompile(`(?is)^UPDATE\s+(` + field + `\.)?` + field + `\s+SET\s+(.*)\s+WHERE\s+id\s*=\s*(.*?)` + with + `$`)
-	reDelete = regexp.MustCompile(`(?is)^DELETE\s+FROM\s+(` + field + `\.)?` + field + `\s+WHERE\s+id\s*=\s*(.*?)` + with + `$`)
+	//reDelete = regexp.MustCompile(`(?is)^DELETE\s+FROM\s+(` + field + `\.)?` + field + `\s+WHERE\s+id\s*=\s*(.*?)` + with + `$`)
+	reDelete = regexp.MustCompile(`(?is)^DELETE\s+FROM\s+(` + field + `\.)?` + field + `\s+WHERE\s(.*?)` + with + `$`)
 )
 
 // ParseQueryWithDefaultDb parses the given query and returns a Stmt.
@@ -195,7 +196,8 @@ func ParseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, err
 				dbName:   strings.TrimSpace(groups[0][2]),
 				collName: strings.TrimSpace(groups[0][3]),
 			},
-			idStr: strings.TrimSpace(groups[0][4]),
+			//idStr:    strings.TrimSpace(groups[0][4]),
+			whereStr: strings.TrimSpace(groups[0][4]),
 		}
 		if stmt.dbName == "" {
 			stmt.dbName = defaultDb
@@ -249,7 +251,7 @@ func (s *Stmt) parseWithOpts(withOptsStr string) error {
 			break
 		}
 		k := strings.TrimSpace(strings.ToUpper(matches[2]))
-		s.withOpts[k] = strings.TrimSuffix(strings.TrimSpace(matches[4]), ",")
+		s.withOpts[k] = strings.TrimSpace(strings.TrimSuffix(matches[4], ","))
 		withOptsStr = withOptsStr[len(matches[0]):]
 	}
 	return nil
