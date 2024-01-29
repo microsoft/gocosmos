@@ -1,4 +1,1 @@
-- Refactored DELETE statement, appending PK values at the end of parameter list is no longer needed.
-- Refactored UPDATE statement, appending PK values at the end of parameter list is no longer needed.
-- Feature: INSERT/UPSERT statement accepts WITH PK clause. Appending PK values at the end of parameter list is no longer needed.
-- Deprecated: WITH singlePK/SINGLE_PK is now deprecated for INSERT/UPSERT, DELETE and UPDATE statements.
+
