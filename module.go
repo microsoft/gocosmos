@@ -3,7 +3,7 @@ package gocosmos
 
 const (
 	// Version holds the semantic version number of package gocosmos.
-	Version = "1.0.1"
+	Version = "1.0.2"
 )
 
 // This file contains module's metadata only, which is package level documentation and module Version string.

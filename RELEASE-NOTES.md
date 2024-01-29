@@ -1,5 +1,11 @@
 # gocosmos - Release notes
 
+## 2023-12-20 - v1.0.2
+
+### Security
+
+- Security: fix CodeQL code scanning alerts
+
 ## 2023-12-19 - v1.0.1
 
 ### Fixed/Improvement
