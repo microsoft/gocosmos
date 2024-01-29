@@ -30,8 +30,9 @@ var (
 
 	reInsert = regexp.MustCompile(`(?is)^(INSERT|UPSERT)\s+INTO\s+(` + field + `\.)?` + field + `\s*\(([^)]*?)\)\s*VALUES\s*\(([^)]*?)\)` + with + `$`)
 	reSelect = regexp.MustCompile(`(?is)^SELECT\s+(CROSS\s+PARTITION\s+)?.*?\s+FROM\s+` + field + `.*?` + with + `$`)
-	reUpdate = regexp.MustCompile(`(?is)^UPDATE\s+(` + field + `\.)?` + field + `\s+SET\s+(.*)\s+WHERE\s+id\s*=\s*(.*?)` + with + `$`)
-	reDelete = regexp.MustCompile(`(?is)^DELETE\s+FROM\s+(` + field + `\.)?` + field + `\s+WHERE\s+id\s*=\s*(.*?)` + with + `$`)
+	//reUpdate = regexp.MustCompile(`(?is)^UPDATE\s+(` + field + `\.)?` + field + `\s+SET\s+(.*)\s+WHERE\s+id\s*=\s*(.*?)` + with + `$`)
+	reUpdate = regexp.MustCompile(`(?is)^UPDATE\s+(` + field + `\.)?` + field + `\s+SET\s+(.*)\s+WHERE\s+(.*?)` + with + `$`)
+	reDelete = regexp.MustCompile(`(?is)^DELETE\s+FROM\s+(` + field + `\.)?` + field + `\s+WHERE\s+(.*?)` + with + `$`)
 )
 
 // ParseQueryWithDefaultDb parses the given query and returns a Stmt.
@@ -42,7 +43,7 @@ func ParseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, err
 	if re := reCreateDb; re.MatchString(query) {
 		groups := re.FindAllStringSubmatch(query, -1)
 		stmt := &StmtCreateDatabase{
-			Stmt:        &Stmt{query: query, conn: c, numInput: 0},
+			Stmt:        &Stmt{query: query, conn: c, numInputs: 0},
 			dbName:      strings.TrimSpace(groups[0][2]),
 			ifNotExists: strings.TrimSpace(groups[0][1]) != "",
 		}
@@ -54,7 +55,7 @@ func ParseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, err
 	if re := reAlterDb; re.MatchString(query) {
 		groups := re.FindAllStringSubmatch(query, -1)
 		stmt := &StmtAlterDatabase{
-			Stmt:   &Stmt{query: query, conn: c, numInput: 0},
+			Stmt:   &Stmt{query: query, conn: c, numInputs: 0},
 			dbName: strings.TrimSpace(groups[0][1]),
 		}
 		if err := stmt.parse(strings.TrimSpace(groups[0][2])); err != nil {
@@ -65,7 +66,7 @@ func ParseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, err
 	if re := reDropDb; re.MatchString(query) {
 		groups := re.FindAllStringSubmatch(query, -1)
 		stmt := &StmtDropDatabase{
-			Stmt:     &Stmt{query: query, conn: c, numInput: 0},
+			Stmt:     &Stmt{query: query, conn: c, numInputs: 0},
 			dbName:   strings.TrimSpace(groups[0][2]),
 			ifExists: strings.TrimSpace(groups[0][1]) != "",
 		}
@@ -73,7 +74,7 @@ func ParseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, err
 	}
 	if re := reListDbs; re.MatchString(query) {
 		stmt := &StmtListDatabases{
-			Stmt: &Stmt{query: query, conn: c, numInput: 0},
+			Stmt: &Stmt{query: query, conn: c, numInputs: 0},
 		}
 		return stmt, stmt.validate()
 	}
@@ -81,7 +82,7 @@ func ParseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, err
 	if re := reCreateColl; re.MatchString(query) {
 		groups := re.FindAllStringSubmatch(query, -1)
 		stmt := &StmtCreateCollection{
-			Stmt:        &Stmt{query: query, conn: c, numInput: 0},
+			Stmt:        &Stmt{query: query, conn: c, numInputs: 0},
 			ifNotExists: strings.TrimSpace(groups[0][2]) != "",
 			dbName:      strings.TrimSpace(groups[0][4]),
 			collName:    strings.TrimSpace(groups[0][5]),
@@ -97,7 +98,7 @@ func ParseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, err
 	if re := reAlterColl; re.MatchString(query) {
 		groups := re.FindAllStringSubmatch(query, -1)
 		stmt := &StmtAlterCollection{
-			Stmt:     &Stmt{query: query, conn: c, numInput: 0},
+			Stmt:     &Stmt{query: query, conn: c, numInputs: 0},
 			dbName:   strings.TrimSpace(groups[0][3]),
 			collName: strings.TrimSpace(groups[0][4]),
 		}
@@ -112,7 +113,7 @@ func ParseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, err
 	if re := reDropColl; re.MatchString(query) {
 		groups := re.FindAllStringSubmatch(query, -1)
 		stmt := &StmtDropCollection{
-			Stmt:     &Stmt{query: query, conn: c, numInput: 0},
+			Stmt:     &Stmt{query: query, conn: c, numInputs: 0},
 			dbName:   strings.TrimSpace(groups[0][4]),
 			collName: strings.TrimSpace(groups[0][5]),
 			ifExists: strings.TrimSpace(groups[0][2]) != "",
@@ -125,7 +126,7 @@ func ParseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, err
 	if re := reListColls; re.MatchString(query) {
 		groups := re.FindAllStringSubmatch(query, -1)
 		stmt := &StmtListCollections{
-			Stmt:   &Stmt{query: query, conn: c, numInput: 0},
+			Stmt:   &Stmt{query: query, conn: c, numInputs: 0},
 			dbName: strings.TrimSpace(groups[0][3]),
 		}
 		if stmt.dbName == "" {
@@ -138,7 +139,7 @@ func ParseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, err
 		groups := re.FindAllStringSubmatch(query, -1)
 		stmt := &StmtInsert{
 			StmtCRUD: &StmtCRUD{
-				Stmt:     &Stmt{query: query, conn: c, numInput: 0},
+				Stmt:     &Stmt{query: query, conn: c, numInputs: 0},
 				dbName:   strings.TrimSpace(groups[0][3]),
 				collName: strings.TrimSpace(groups[0][4]),
 			},
@@ -157,7 +158,7 @@ func ParseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, err
 	if re := reSelect; re.MatchString(query) {
 		groups := re.FindAllStringSubmatch(query, -1)
 		stmt := &StmtSelect{
-			Stmt:             &Stmt{query: query, conn: c, numInput: 0},
+			Stmt:             &Stmt{query: query, conn: c, numInputs: 0},
 			isCrossPartition: strings.TrimSpace(groups[0][1]) != "",
 			collName:         strings.TrimSpace(groups[0][2]),
 			dbName:           defaultDb,
@@ -172,12 +173,12 @@ func ParseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, err
 		groups := re.FindAllStringSubmatch(query, -1)
 		stmt := &StmtUpdate{
 			StmtCRUD: &StmtCRUD{
-				Stmt:     &Stmt{query: query, conn: c, numInput: 0},
+				Stmt:     &Stmt{query: query, conn: c, numInputs: 0},
 				dbName:   strings.TrimSpace(groups[0][2]),
 				collName: strings.TrimSpace(groups[0][3]),
 			},
 			updateStr: strings.TrimSpace(groups[0][4]),
-			idStr:     strings.TrimSpace(groups[0][5]),
+			whereStr:  strings.TrimSpace(groups[0][5]),
 		}
 		if stmt.dbName == "" {
 			stmt.dbName = defaultDb
@@ -191,11 +192,11 @@ func ParseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, err
 		groups := re.FindAllStringSubmatch(query, -1)
 		stmt := &StmtDelete{
 			StmtCRUD: &StmtCRUD{
-				Stmt:     &Stmt{query: query, conn: c, numInput: 0},
+				Stmt:     &Stmt{query: query, conn: c, numInputs: 0},
 				dbName:   strings.TrimSpace(groups[0][2]),
 				collName: strings.TrimSpace(groups[0][3]),
 			},
-			idStr: strings.TrimSpace(groups[0][4]),
+			whereStr: strings.TrimSpace(groups[0][4]),
 		}
 		if stmt.dbName == "" {
 			stmt.dbName = defaultDb
@@ -211,10 +212,17 @@ func ParseQueryWithDefaultDb(c *Conn, defaultDb, query string) (driver.Stmt, err
 
 // Stmt is Azure Cosmos DB abstract implementation of driver.Stmt.
 type Stmt struct {
-	query    string // the SQL query
-	conn     *Conn  // the connection that this prepared statement is bound to
-	numInput int    // number of placeholder parameters, INCLUDING PK values!
-	withOpts map[string]string
+	query     string // the SQL query
+	conn      *Conn  // the connection that this prepared statement is bound to
+	numInputs int    // number of placeholder parameters, INCLUDING PK values!
+	withOpts  map[string]string
+}
+
+// String implements interface fmt.Stringer/String.
+//
+// @Available since <<VERSION>>
+func (s *Stmt) String() string {
+	return fmt.Sprintf(`Stmt{query: %q, num_inputs: %d, with_opts: %v}`, s.query, s.numInputs, s.withOpts)
 }
 
 func (s *Stmt) onlyOneWithOption(errmsg string, optKeys ...string) error {
@@ -242,7 +250,7 @@ func (s *Stmt) parseWithOpts(withOptsStr string) error {
 			break
 		}
 		k := strings.TrimSpace(strings.ToUpper(matches[2]))
-		s.withOpts[k] = strings.TrimSuffix(strings.TrimSpace(matches[4]), ",")
+		s.withOpts[k] = strings.TrimSpace(strings.TrimSuffix(matches[4], ","))
 		withOptsStr = withOptsStr[len(matches[0]):]
 	}
 	return nil
