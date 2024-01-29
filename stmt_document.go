@@ -247,6 +247,9 @@ func (s *StmtCRUD) parseWithOpts(withOptsStr string) error {
 //	    - a map value in JSON (include the double quotes): "{\"key\":\"value\"}"
 //	    - a list value in JSON (include the double quotes): "[1,true,null,\"string\"]"
 //
+//	- Using WITH PK is highly recommended to save one round-trip to server to fetch the collection's partition key info.
+//	- If collection's PK has more than one path (i.e. sub-partition is used), the partition paths are comma separated, prefixed with '/', and must be specified in the same order as in the collection (.e.g. WITH PK=/field1,/field2...).
+//
 // CosmosDB automatically creates a few extra fields for the insert document.
 // See https://docs.microsoft.com/en-us/azure/cosmos-db/account-databases-containers-items#properties-of-an-item.
 type StmtInsert struct {
@@ -382,11 +385,13 @@ func (s *StmtInsert) Query(_ []driver.Value) (driver.Rows, error) {
 //
 //	DELETE FROM <db-name>.<collection-name>
 //	WHERE id=<id-value>
-//	[AND pk1=<pk1-value> [AND pk2=<pk2-value> ...]]
+//	[AND pk1-path=<pk1-value> [AND pk2-path=<pk2-value> ...]]
 //
-//	- DELETE removes only one document specified by id.
-//	- The clause WHERE id=<id-value> is mandatory, and id is a keyword, _not_ a field name.
+//	- DELETE removes only one document specified by 'id'.
+//	- The clause WHERE id=<id-value> is mandatory, and 'id' is a keyword, _not_ a field name.
 //	- <id-value> and <pk-value> must be a placeholder (e.g. :1, @2 or $3), or JSON value.
+//	- Supplying pk-paths and pk-values is highly recommended to save one round-trip to server to fetch the collection's partition key info.
+//	- If collection's PK has more than one path (i.e. sub-partition is used), the partition paths must be specified in the same order as in the collection (.e.g. AND field1=value1 AND field2=value2...).
 //
 // See StmtInsert for details on <id-value> and <pk-value>.
 type StmtDelete struct {
@@ -544,6 +549,14 @@ type StmtSelect struct {
 	placeholders     map[int]string
 }
 
+// String implements interface fmt.Stringer/String.
+//
+// @Available since <<VERSION>>
+func (s *StmtSelect) String() string {
+	return fmt.Sprintf(`StmtSelect{Stmt: %s, cross_partition: %v, db: %q, collection: %q}`,
+		s.Stmt, s.isCrossPartition, s.dbName, s.collName)
+}
+
 func (s *StmtSelect) parse(withOptsStr string) error {
 	if err := s.parseWithOpts(withOptsStr); err != nil {
 		return err
@@ -646,11 +659,13 @@ func (s *StmtSelect) Exec(_ []driver.Value) (driver.Result, error) {
 //	UPDATE <db-name>.<collection-name>
 //	SET <field-name1>=<value1>[,<field-nameN>=<valueN>]*
 //	WHERE id=<id-value>
-//	[AND pk1=<pk1-value> [AND pk2=<pk2-value> ...]]
+//	[AND pk1-path=<pk1-value> [AND pk2-path=<pk2-value> ...]]
 //
-//	- UPDATE modifies only one document specified by id.
-//	- The clause WHERE id=<id-value> is mandatory, and id is a keyword, _not_ a field name.
+//	- UPDATE modifies only one document specified by 'id'.
+//	- The clause WHERE id=<id-value> is mandatory, and 'id' is a keyword, _not_ a field name.
 //	- <id-value> and <pk-value> must be a placeholder (e.g. :1, @2 or $3), or JSON value.
+//	- Supplying pk-paths and pk-values is highly recommended to save one round-trip to server to fetch the collection's partition key info.
+//	- If collection's PK has more than one path (i.e. sub-partition is used), the partition paths must be specified in the same order as in the collection (.e.g. AND field1=value1 AND field2=value2...).
 //
 // See StmtInsert for details on <id-value> and <pk-value>.
 type StmtUpdate struct {
