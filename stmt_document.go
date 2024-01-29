@@ -163,7 +163,7 @@ type StmtCRUD struct {
 
 // String implements interface fmt.Stringer/String.
 //
-// @Available since <<VERSION>>
+// @Available since v1.1.0
 func (s *StmtCRUD) String() string {
 	return fmt.Sprintf(`StmtCRUD{Stmt: %s, db: %q, collection: %q, is_single_pk: %v, with_pk: %q, pk_paths: %v, num_pk_paths: %d}`,
 		s.Stmt, s.dbName, s.collName, s.isSinglePathPk, s.withPk, s.pkPaths, s.numPkPaths)
@@ -263,7 +263,7 @@ type StmtInsert struct {
 
 // String implements interface fmt.Stringer/String.
 //
-// @Available since <<VERSION>>
+// @Available since v1.1.0
 func (s *StmtInsert) String() string {
 	return fmt.Sprintf(`StmtInsert{StmtCRUD: %s, upsert: %v, field_str: %q, value_str: %q, fields: %v, values: %v}`,
 		s.StmtCRUD, s.isUpsert, s.fieldsStr, s.valuesStr, s.fields, s.values)
@@ -403,7 +403,7 @@ type StmtDelete struct {
 
 // String implements interface fmt.Stringer/String.
 //
-// @Available since <<VERSION>>
+// @Available since v1.1.0
 func (s *StmtDelete) String() string {
 	return fmt.Sprintf(`StmtDelete{StmtCRUD: %s, where_clause: %q, id: %v, pk_values: %v}`,
 		s.StmtCRUD, s.whereStr, s.id, s.pkValues)
@@ -551,7 +551,7 @@ type StmtSelect struct {
 
 // String implements interface fmt.Stringer/String.
 //
-// @Available since <<VERSION>>
+// @Available since v1.1.0
 func (s *StmtSelect) String() string {
 	return fmt.Sprintf(`StmtSelect{Stmt: %s, cross_partition: %v, db: %q, collection: %q}`,
 		s.Stmt, s.isCrossPartition, s.dbName, s.collName)
@@ -680,7 +680,7 @@ type StmtUpdate struct {
 
 // String implements interface fmt.Stringer/String.
 //
-// @Available since <<VERSION>>
+// @Available since v1.1.0
 func (s *StmtUpdate) String() string {
 	return fmt.Sprintf(`StmtUpdate{StmtCRUD: %s, fields: %v, values: %v, where_clause: %q, id: %v, pk_values: %v}`,
 		s.StmtCRUD, s.fields, s.values, s.whereStr, s.id, s.pkValues)
