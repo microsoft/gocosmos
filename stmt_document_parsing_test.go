@@ -223,7 +223,7 @@ $1, :3, @2)`,
 			stmt.fieldsStr = ""
 			stmt.valuesStr = ""
 			if !reflect.DeepEqual(stmt, testCase.expected) {
-				t.Fatalf("%s failed:\nexpected %#v\nreceived %#v", testName+"/"+testCase.name, testCase.expected, stmt)
+				t.Fatalf("%s failed:\nexpected %s\nreceived %s", testName+"/"+testCase.name, testCase.expected, stmt)
 			}
 		})
 	}
@@ -322,7 +322,7 @@ a,b,c) VALUES ($1,
 			stmt.fieldsStr = ""
 			stmt.valuesStr = ""
 			if !reflect.DeepEqual(stmt, testCase.expected) {
-				t.Fatalf("%s failed:\nexpected %#v\nreceived %#v", testName+"/"+testCase.name, testCase.expected, stmt)
+				t.Fatalf("%s failed:\nexpected %s\nreceived %s", testName+"/"+testCase.name, testCase.expected, stmt)
 			}
 		})
 	}
@@ -424,14 +424,10 @@ a,b,c) VALUES ($1,
 			stmt.fieldsStr = ""
 			stmt.valuesStr = ""
 			if !reflect.DeepEqual(stmt, testCase.expected) {
-				t.Fatalf("%s failed:\nexpected %#v/%#v\nreceived %#v/%#v", testName+"/"+testCase.name, testCase.expected.StmtCRUD, testCase.expected, stmt.StmtCRUD, stmt)
+				t.Fatalf("%s failed:\nexpected %s\nreceived %s", testName+"/"+testCase.name, testCase.expected, stmt)
 			}
 		})
 	}
-}
-
-func TestDummy(t *testing.T) {
-	t.Logf("[DEBUG] %s", reDelete.String())
 }
 
 func TestStmtDelete_parse(t *testing.T) {
@@ -540,7 +536,7 @@ db1.table1 WHERE
 			stmt.Stmt = &Stmt{numInputs: stmt.numInputs}
 			stmt.whereStr = "" // ignore
 			if !reflect.DeepEqual(stmt, testCase.expected) {
-				t.Fatalf("%s failed:\nexpected %s\nreceived %s", testName+"/"+testCase.name, testCase.expected.StmtCRUD, stmt.StmtCRUD)
+				t.Fatalf("%s failed:\nexpected %s\nreceived %s", testName+"/"+testCase.name, testCase.expected, stmt)
 			}
 		})
 	}
@@ -646,7 +642,7 @@ FROM db-2.table_2
 			stmt.Stmt = &Stmt{numInputs: stmt.numInputs}
 			stmt.whereStr = "" // ignore
 			if !reflect.DeepEqual(stmt, testCase.expected) {
-				t.Fatalf("%s failed:\nexpected %s\nreceived %s", testName+"/"+testCase.name, testCase.expected.StmtCRUD, stmt.StmtCRUD)
+				t.Fatalf("%s failed:\nexpected %s\nreceived %s", testName+"/"+testCase.name, testCase.expected, stmt)
 			}
 		})
 	}
@@ -709,7 +705,7 @@ func TestStmtSelect_parse(t *testing.T) {
 			}
 			stmt.Stmt = nil
 			if !reflect.DeepEqual(stmt, testCase.expected) {
-				t.Fatalf("%s failed:\nexpected %#v\nreceived %#v", testName+"/"+testCase.name, testCase.expected, stmt)
+				t.Fatalf("%s failed:\nexpected %s\nreceived %s", testName+"/"+testCase.name, testCase.expected, stmt)
 			}
 		})
 	}
@@ -767,7 +763,7 @@ func TestStmtSelect_parse_defaultDb(t *testing.T) {
 			}
 			stmt.Stmt = nil
 			if !reflect.DeepEqual(stmt, testCase.expected) {
-				t.Fatalf("%s failed:\nexpected %#v\nreceived %#v", testName+"/"+testCase.name, testCase.expected, stmt)
+				t.Fatalf("%s failed:\nexpected %s\nreceived %s", testName+"/"+testCase.name, testCase.expected, stmt)
 			}
 		})
 	}
@@ -794,45 +790,58 @@ func TestStmtUpdate_parse(t *testing.T) {
 
 		{
 			name: "basic",
-			sql: `UPDATE db1.table1 
-SET a=null, b=
-	1.0, c=true, 
-  d="\"a string 'with' \\\"quote\\\"\"", e="{\"key\":\"value\"}"
-,f="[2.0,null,false,\"a string 'with' \\\"quote\\\"\"]" WHERE
-	id="abc"`,
-			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{dbName: "db1", collName: "table1"}, updateStr: `a=null, b=
-	1.0, c=true, 
-  d="\"a string 'with' \\\"quote\\\"\"", e="{\"key\":\"value\"}"
-,f="[2.0,null,false,\"a string 'with' \\\"quote\\\"\"]"`, fields: []string{"a", "b", "c", "d", "e", "f"}, values: []interface{}{nil, 1.0, true, `a string 'with' "quote"`, map[string]interface{}{"key": "value"}, []interface{}{2.0, nil, false, `a string 'with' "quote"`}}, idStr: "abc"},
+			sql: `UPDATE db1.table1
+		SET a=null, b=
+			1.0, c=true,
+		 d="\"a string 'with' \\\"quote\\\"\"", e="{\"key\":\"value\"}"
+		,f="[2.0,null,false,\"a string 'with' \\\"quote\\\"\"]" WHERE
+			id=abc`,
+			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{Stmt: &Stmt{}, dbName: "db1", collName: "table1", pkPaths: []string{}},
+				id: "abc", pkValues: []interface{}{},
+				fields: []string{"a", "b", "c", "d", "e", "f"},
+				values: []interface{}{nil, 1.0, true, `a string 'with' "quote"`, map[string]interface{}{"key": "value"}, []interface{}{2.0, nil, false, `a string 'with' "quote"`}}},
 		},
 		{
 			name: "basic2",
-			sql: `UPDATE db-1.table_1 
-SET a=$1, b=
-	$2, c=:3, d=0 WHERE
-	id=@4`,
-			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{dbName: "db-1", collName: "table_1"}, updateStr: `a=$1, b=
-	$2, c=:3, d=0`, fields: []string{"a", "b", "c", "d"}, values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}, idStr: "@4", id: placeholder{4}},
+			sql: `UPDATE db-1.table_1
+				SET a=$1, b=
+					$2, c=:3, d=0 WHERE
+					id=@4`,
+			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 4}, dbName: "db-1", collName: "table_1", pkPaths: []string{}},
+				id: placeholder{4}, pkValues: []interface{}{},
+				fields: []string{"a", "b", "c", "d"},
+				values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}},
 		},
 		{
-			name:     "singlepk",
-			sql:      `UPDATE db.table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 with SinglePk`,
-			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, updateStr: `a=$1, b=$2, c=:3, d=0`, fields: []string{"a", "b", "c", "d"}, values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}, idStr: "@4", id: placeholder{4}},
+			name: "singlepk",
+			sql:  `UPDATE db.table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 with SinglePk`,
+			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 4}, dbName: "db", collName: "table", isSinglePathPk: true, pkPaths: []string{}, numPkPaths: 1},
+				id: placeholder{4}, pkValues: []interface{}{},
+				fields: []string{"a", "b", "c", "d"},
+				values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}},
 		},
 		{
-			name:     "single_pk",
-			sql:      `UPDATE db.table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 WITH SINGLE_PK`,
-			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, updateStr: `a=$1, b=$2, c=:3, d=0`, fields: []string{"a", "b", "c", "d"}, values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}, idStr: "@4", id: placeholder{4}},
+			name: "single_pk",
+			sql:  `UPDATE db.table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 WITH SINGLE_PK`,
+			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 4}, dbName: "db", collName: "table", isSinglePathPk: true, pkPaths: []string{}, numPkPaths: 1},
+				id: placeholder{4}, pkValues: []interface{}{},
+				fields: []string{"a", "b", "c", "d"},
+				values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}},
 		},
 		{
-			name:     "singlepk2",
-			sql:      `UPDATE db.table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 with SinglePk=true`,
-			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, updateStr: `a=$1, b=$2, c=:3, d=0`, fields: []string{"a", "b", "c", "d"}, values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}, idStr: "@4", id: placeholder{4}},
+			name: "singlepk2",
+			sql:  `UPDATE db.table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 with SinglePk=true`,
+			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 4}, dbName: "db", collName: "table", isSinglePathPk: true, pkPaths: []string{}, numPkPaths: 1},
+				id: placeholder{4}, pkValues: []interface{}{},
+				fields: []string{"a", "b", "c", "d"}, values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}},
 		},
 		{
-			name:     "single_pk2",
-			sql:      `UPDATE db.table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 WITH SINGLE_PK=true`,
-			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, updateStr: `a=$1, b=$2, c=:3, d=0`, fields: []string{"a", "b", "c", "d"}, values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}, idStr: "@4", id: placeholder{4}},
+			name: "single_pk2",
+			sql:  `UPDATE db.table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 WITH SINGLE_PK=true`,
+			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 4}, dbName: "db", collName: "table", isSinglePathPk: true, pkPaths: []string{}, numPkPaths: 1},
+				id: placeholder{4}, pkValues: []interface{}{},
+				fields: []string{"a", "b", "c", "d"},
+				values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}},
 		},
 		{
 			name:      "error_singlepk_single_pk",
@@ -848,6 +857,23 @@ SET a=$1, b=
 			name:      "error_invalid_single_pk",
 			sql:       `UPDATE db.table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 WITH SINGLE_PK=error`,
 			mustError: true,
+		},
+
+		{
+			name: "where_pk",
+			sql:  `UPDATE db.table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 AND pk=abc`,
+			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 4}, dbName: "db", collName: "table", pkPaths: []string{"/pk"}, numPkPaths: 1},
+				id: placeholder{4}, pkValues: []interface{}{"abc"},
+				fields: []string{"a", "b", "c", "d"},
+				values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}},
+		},
+		{
+			name: "where_pk_subpartitions",
+			sql:  `UPDATE db.table SET a=1, b=$2, c="\"3\"", d=$9 WHERE id=@3 AND app=$4 and Username=1`,
+			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 9}, dbName: "db", collName: "table", pkPaths: []string{"/app", "/Username"}, numPkPaths: 2},
+				id: placeholder{3}, pkValues: []interface{}{placeholder{4}, 1.0},
+				fields: []string{"a", "b", "c", "d"},
+				values: []interface{}{1.0, placeholder{2}, "3", placeholder{9}}},
 		},
 	}
 	for _, testCase := range testData {
@@ -866,9 +892,11 @@ SET a=$1, b=
 			if !ok {
 				t.Fatalf("%s failed: expected StmtUpdate but received %T", testName+"/"+testCase.name, s)
 			}
-			stmt.Stmt = nil
+			stmt.Stmt = &Stmt{numInputs: stmt.numInputs}
+			stmt.whereStr = ""  // ignore
+			stmt.updateStr = "" // ignore
 			if !reflect.DeepEqual(stmt, testCase.expected) {
-				t.Fatalf("%s failed:\nexpected %#v\nreceived %#v", testName+"/"+testCase.name, testCase.expected, stmt)
+				t.Fatalf("%s failed:\nexpected %s\nreceived %s", testName+"/"+testCase.name, testCase.expected, stmt)
 			}
 		})
 	}
@@ -890,49 +918,64 @@ func TestStmtUpdate_parse_defaultDb(t *testing.T) {
 		{
 			name: "basic",
 			db:   "mydb",
-			sql: `UPDATE table1 
+			sql: `UPDATE table1
 SET a=null, b=
-	1.0, c=true, 
-  d="\"a string 'with' \\\"quote\\\"\"", e="{\"key\":\"value\"}"
+	1.0, c=true,
+ d="\"a string 'with' \\\"quote\\\"\"", e="{\"key\":\"value\"}"
 ,f="[2.0,null,false,\"a string 'with' \\\"quote\\\"\"]" WHERE
-	id="abc"`,
-			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{dbName: "mydb", collName: "table1"}, updateStr: `a=null, b=
-	1.0, c=true, 
-  d="\"a string 'with' \\\"quote\\\"\"", e="{\"key\":\"value\"}"
-,f="[2.0,null,false,\"a string 'with' \\\"quote\\\"\"]"`, fields: []string{"a", "b", "c", "d", "e", "f"}, values: []interface{}{nil, 1.0, true, `a string 'with' "quote"`, map[string]interface{}{"key": "value"}, []interface{}{2.0, nil, false, `a string 'with' "quote"`}}, idStr: "abc"}},
+	id=abc`,
+			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{Stmt: &Stmt{}, dbName: "mydb", collName: "table1", pkPaths: []string{}},
+				id: "abc", pkValues: []interface{}{},
+				fields: []string{"a", "b", "c", "d", "e", "f"},
+				values: []interface{}{nil, 1.0, true, `a string 'with' "quote"`, map[string]interface{}{"key": "value"}, []interface{}{2.0, nil, false, `a string 'with' "quote"`}}},
+		},
 		{
 			name: "db_in_query",
 			db:   "mydb",
-			sql: `UPDATE db-1.table_1 
-SET a=$1, b=
-	$2, c=:3, d=0 WHERE
-	id=@4`,
-			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{dbName: "db-1", collName: "table_1"}, updateStr: `a=$1, b=
-	$2, c=:3, d=0`, fields: []string{"a", "b", "c", "d"}, values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}, idStr: "@4", id: placeholder{4}},
+			sql: `UPDATE db-1.table_1
+		SET a=$1, b=
+			$2, c=:3, d=0 WHERE
+			id=@4`,
+			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 4}, dbName: "db-1", collName: "table_1", pkPaths: []string{}},
+				id: placeholder{4}, pkValues: []interface{}{},
+				fields: []string{"a", "b", "c", "d"},
+				values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}},
 		},
 		{
-			name:     "singlepk",
-			db:       "mydb",
-			sql:      `UPDATE table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 with SinglePk`,
-			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{dbName: "mydb", collName: "table", isSinglePathPk: true, numPkPaths: 1}, updateStr: `a=$1, b=$2, c=:3, d=0`, fields: []string{"a", "b", "c", "d"}, values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}, idStr: "@4", id: placeholder{4}},
+			name: "singlepk",
+			db:   "mydb",
+			sql:  `UPDATE table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 with SinglePk`,
+			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 4}, dbName: "mydb", collName: "table", isSinglePathPk: true, numPkPaths: 1, pkPaths: []string{}},
+				id: placeholder{4}, pkValues: []interface{}{},
+				fields: []string{"a", "b", "c", "d"},
+				values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}},
 		},
 		{
-			name:     "single_pk",
-			db:       "mydb",
-			sql:      `UPDATE db.table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 WITH SINGLE_PK`,
-			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, updateStr: `a=$1, b=$2, c=:3, d=0`, fields: []string{"a", "b", "c", "d"}, values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}, idStr: "@4", id: placeholder{4}},
+			name: "single_pk",
+			db:   "mydb",
+			sql:  `UPDATE db.table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 WITH SINGLE_PK`,
+			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 4}, dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1, pkPaths: []string{}},
+				id: placeholder{4}, pkValues: []interface{}{},
+				fields: []string{"a", "b", "c", "d"},
+				values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}},
 		},
 		{
-			name:     "singlepk2",
-			db:       "mydb",
-			sql:      `UPDATE table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 with SinglePk=true`,
-			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{dbName: "mydb", collName: "table", isSinglePathPk: true, numPkPaths: 1}, updateStr: `a=$1, b=$2, c=:3, d=0`, fields: []string{"a", "b", "c", "d"}, values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}, idStr: "@4", id: placeholder{4}},
+			name: "singlepk2",
+			db:   "mydb",
+			sql:  `UPDATE table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 with SinglePk=true`,
+			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 4}, dbName: "mydb", collName: "table", isSinglePathPk: true, numPkPaths: 1, pkPaths: []string{}},
+				id: placeholder{4}, pkValues: []interface{}{},
+				fields: []string{"a", "b", "c", "d"},
+				values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}},
 		},
 		{
-			name:     "single_pk2",
-			db:       "mydb",
-			sql:      `UPDATE db.table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 WITH SINGLE_PK=true`,
-			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1}, updateStr: `a=$1, b=$2, c=:3, d=0`, fields: []string{"a", "b", "c", "d"}, values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}, idStr: "@4", id: placeholder{4}},
+			name: "single_pk2",
+			db:   "mydb",
+			sql:  `UPDATE db.table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 WITH SINGLE_PK=true`,
+			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 4}, dbName: "db", collName: "table", isSinglePathPk: true, numPkPaths: 1, pkPaths: []string{}},
+				id: placeholder{4}, pkValues: []interface{}{},
+				fields: []string{"a", "b", "c", "d"},
+				values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}},
 		},
 		{
 			name:      "error_singlepk_single_pk",
@@ -952,6 +995,25 @@ SET a=$1, b=
 			sql:       `UPDATE db.table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 WITH SINGLE_PK=error`,
 			mustError: true,
 		},
+
+		{
+			name: "where_pk",
+			db:   "mydb",
+			sql:  `UPDATE table SET a=$1, b=$2, c=:3, d=0 WHERE id=@4 AND pk=abc`,
+			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 4}, dbName: "mydb", collName: "table", pkPaths: []string{"/pk"}, numPkPaths: 1},
+				id: placeholder{4}, pkValues: []interface{}{"abc"},
+				fields: []string{"a", "b", "c", "d"},
+				values: []interface{}{placeholder{1}, placeholder{2}, placeholder{3}, 0.0}},
+		},
+		{
+			name: "where_pk_subpartitions",
+			db:   "mydb",
+			sql:  `UPDATE table SET a=1, b=$2, c="\"3\"", d=$9 WHERE id=@3 AND app=$4 and Username=1`,
+			expected: &StmtUpdate{StmtCRUD: &StmtCRUD{Stmt: &Stmt{numInputs: 9}, dbName: "mydb", collName: "table", pkPaths: []string{"/app", "/Username"}, numPkPaths: 2},
+				id: placeholder{3}, pkValues: []interface{}{placeholder{4}, 1.0},
+				fields: []string{"a", "b", "c", "d"},
+				values: []interface{}{1.0, placeholder{2}, "3", placeholder{9}}},
+		},
 	}
 	for _, testCase := range testData {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -969,9 +1031,11 @@ SET a=$1, b=
 			if !ok {
 				t.Fatalf("%s failed: expected StmtUpdate but received %T", testName+"/"+testCase.name, s)
 			}
-			stmt.Stmt = nil
+			stmt.Stmt = &Stmt{numInputs: stmt.numInputs}
+			stmt.whereStr = ""  // ignore
+			stmt.updateStr = "" // ignore
 			if !reflect.DeepEqual(stmt, testCase.expected) {
-				t.Fatalf("%s failed:\nexpected %#v\nreceived %#v", testName+"/"+testCase.name, testCase.expected, stmt)
+				t.Fatalf("%s failed:\nexpected %s\nreceived %s", testName+"/"+testCase.name, testCase.expected, stmt)
 			}
 		})
 	}

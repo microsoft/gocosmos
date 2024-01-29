@@ -14,11 +14,11 @@ import (
 )
 
 var (
-	reValNull          = regexp.MustCompile(`(?i)(null)\s*,?`)
-	reValNumber        = regexp.MustCompile(`([\d\.xe+-]+)\s*,?`)
-	reValBoolean       = regexp.MustCompile(`(?i)(true|false)\s*,?`)
-	reValString        = regexp.MustCompile(`(?i)("(\\"|[^"])*?")\s*,?`)
-	reValPlaceholder   = regexp.MustCompile(`(?i)[$@:](\d+)\s*,?`)
+	reValNull          = regexp.MustCompile(`(?i)(null)\s*?`)
+	reValNumber        = regexp.MustCompile(`([\d\.xe+-]+)\s*?`)
+	reValBoolean       = regexp.MustCompile(`(?i)(true|false)\s*?`)
+	reValString        = regexp.MustCompile(`(?i)("(\\"|[^"])*?")\s*?`)
+	reValPlaceholder   = regexp.MustCompile(`(?i)[$@:](\d+)\s*?`)
 	reValStringNoQuote = regexp.MustCompile(`(?i)([a-z0-9_./;:\\-]+)`)
 
 	reFieldEqual = regexp.MustCompile(field + `\s*=(.*?)`)
@@ -28,36 +28,49 @@ type placeholder struct {
 	index int
 }
 
+func _buildLeftover(input string, reSep *regexp.Regexp) string {
+	if sep := reSep.FindString(input); sep != "" {
+		input = input[len(sep):]
+	}
+	return input
+}
+
 func _parseValue(input string, separator rune) (value interface{}, leftOver string, err error) {
+	reSep := regexp.MustCompile(`^\s*\` + string(separator) + `\s*`)
+
 	if loc := reValPlaceholder.FindStringIndex(input); loc != nil && loc[0] == 0 {
-		token := strings.TrimFunc(input[loc[0]+1:loc[1]], func(r rune) bool { return _isSpace(r) || r == separator })
+		token := strings.TrimSpace(input[loc[0]+1 : loc[1]])
 		index, err := strconv.Atoi(token)
-		return placeholder{index}, input[loc[1]:], err
+		return placeholder{index}, _buildLeftover(input[loc[1]:], reSep), err
 	}
+
 	if loc := reValNull.FindStringIndex(input); loc != nil && loc[0] == 0 {
-		return nil, input[loc[1]:], nil
+		return nil, _buildLeftover(input[loc[1]:], reSep), nil
 	}
+
 	if loc := reValNumber.FindStringIndex(input); loc != nil && loc[0] == 0 {
-		token := strings.TrimFunc(input[loc[0]:loc[1]], func(r rune) bool { return _isSpace(r) || r == separator })
+		token := strings.TrimSpace(input[loc[0]:loc[1]])
 		var data interface{}
 		err := json.Unmarshal([]byte(token), &data)
 		if err != nil {
 			err = errors.New("(number) cannot parse query, invalid token at: " + token)
 		}
-		return data, input[loc[1]:], err
+		return data, _buildLeftover(input[loc[1]:], reSep), err
 	}
+
 	if loc := reValBoolean.FindStringIndex(input); loc != nil && loc[0] == 0 {
-		token := strings.TrimFunc(input[loc[0]:loc[1]], func(r rune) bool { return _isSpace(r) || r == separator })
+		token := strings.TrimSpace(input[loc[0]:loc[1]])
 		var data bool
 		err := json.Unmarshal([]byte(token), &data)
 		if err != nil {
 			err = errors.New("(bool) cannot parse query, invalid token at: " + token)
 		}
-		return data, input[loc[1]:], err
+		return data, _buildLeftover(input[loc[1]:], reSep), err
 	}
+
 	if loc := reValString.FindStringIndex(input); loc != nil && loc[0] == 0 {
 		var data interface{}
-		token, err := strconv.Unquote(strings.TrimFunc(input[loc[0]:loc[1]], func(r rune) bool { return _isSpace(r) || r == separator }))
+		token, err := strconv.Unquote(strings.TrimSpace(input[loc[0]:loc[1]]))
 		if err == nil {
 			err = json.Unmarshal([]byte(token), &data)
 			if err != nil {
@@ -66,16 +79,14 @@ func _parseValue(input string, separator rune) (value interface{}, leftOver stri
 		} else {
 			err = errors.New("(unquote) cannot parse query, invalid token at: " + token)
 		}
-		return data, input[loc[1]:], err
+		return data, _buildLeftover(input[loc[1]:], reSep), err
 	}
-	return nil, input, errors.New("cannot parse query, invalid token at: " + input)
-}
+	if loc := reValStringNoQuote.FindStringIndex(input); loc != nil && loc[0] == 0 {
+		data := strings.TrimSpace(input[loc[0]:loc[1]])
+		return data, _buildLeftover(input[loc[1]:], reSep), err
+	}
 
-func _buildLeftover(input string, reSep *regexp.Regexp) string {
-	if sep := reSep.FindString(input); sep != "" {
-		input = input[len(sep):]
-	}
-	return input
+	return nil, input, errors.New("cannot parse query, invalid token at: " + input)
 }
 
 func _parseFieldValueAnd(input string) (field string, value interface{}, leftOver string, err error) {
@@ -156,15 +167,6 @@ type StmtCRUD struct {
 func (s *StmtCRUD) String() string {
 	return fmt.Sprintf(`StmtCRUD{Stmt: %s, db: %q, collection: %q, is_single_pk: %v, with_pk: %q, pk_paths: %v, num_pk_paths: %d}`,
 		s.Stmt, s.dbName, s.collName, s.isSinglePathPk, s.withPk, s.pkPaths, s.numPkPaths)
-}
-
-func (s *StmtCRUD) extractPkValuesFromArgs(args ...driver.Value) []interface{} {
-	n := len(args)
-	result := make([]interface{}, s.numPkPaths)
-	for i := n - s.numPkPaths; i < n; i++ {
-		result[i-n+s.numPkPaths] = args[i]
-	}
-	return result
 }
 
 func (s *StmtCRUD) fetchPkInfo() error {
@@ -382,12 +384,13 @@ func (s *StmtInsert) Query(_ []driver.Value) (driver.Rows, error) {
 //	WHERE id=<id-value>
 //	[AND pk1=<pk1-value> [AND pk2=<pk2-value> ...]]
 //
-//	- Currently DELETE only removes one document specified by id.
+//	- DELETE removes only one document specified by id.
 //	- The clause WHERE id=<id-value> is mandatory, and id is a keyword, _not_ a field name.
-//	- <id-value> and <withPk-value-n> must be a placeholder (e.g. :1, @2 or $3), or JSON value.
+//	- <id-value> and <pk-value> must be a placeholder (e.g. :1, @2 or $3), or JSON value.
+//
+// See StmtInsert for details on <id-value> and <pk-value>.
 type StmtDelete struct {
 	*StmtCRUD
-	//idStr    string
 	whereStr string
 	id       interface{}
 	pkValues []interface{}
@@ -404,6 +407,12 @@ func (s *StmtDelete) String() string {
 func (s *StmtDelete) parse(withOptsStr string) error {
 	if err := s.parseWithOpts(withOptsStr); err != nil {
 		return err
+	}
+
+	for k := range s.withOpts {
+		if k != "SINGLE_PK" && k != "SINGLEPK" {
+			return fmt.Errorf("invalid query, parsing error at WITH %s", k)
+		}
 	}
 
 	s.pkPaths = make([]string, 0)
@@ -430,36 +439,13 @@ func (s *StmtDelete) parse(withOptsStr string) error {
 		s.numPkPaths = len(s.pkPaths)
 	}
 
-	for k := range s.withOpts {
-		if k != "SINGLE_PK" && k != "SINGLEPK" {
-			return fmt.Errorf("invalid query, parsing error at WITH %s", k)
-		}
-	}
-
-	//hasPrefix := strings.HasPrefix(s.idStr, `"`)
-	//hasSuffix := strings.HasSuffix(s.idStr, `"`)
-	//if hasPrefix != hasSuffix {
-	//	return fmt.Errorf("invalid id literate: %s", s.idStr)
-	//}
-	//if hasPrefix && hasSuffix {
-	//	s.idStr = strings.TrimSpace(s.idStr[1 : len(s.idStr)-1])
-	//} else if loc := reValPlaceholder.FindStringIndex(s.idStr); loc != nil {
-	//	if loc[0] == 0 && loc[1] == len(s.idStr) {
-	//		index, _ := strconv.Atoi(s.idStr[loc[0]+1:])
-	//		s.id = placeholder{index}
-	//		s.numInputs = g18.Max(s.numInputs, index)
-	//	} else {
-	//		return fmt.Errorf("invalid id literate: %s", s.idStr)
-	//	}
-	//}
-
 	return nil
 }
 
 func (s *StmtDelete) validate() error {
-	//if s.idStr == "" {
-	//	return errors.New("id value is missing")
-	//}
+	if s.id == nil {
+		return errors.New("id value is missing")
+	}
 	if s.dbName == "" || s.collName == "" {
 		return errors.New("database/collection is missing")
 	}
@@ -522,32 +508,6 @@ func (s *StmtDelete) Exec(args []driver.Value) (driver.Result, error) {
 		}
 	}
 	return result, result.err
-
-	//if len(args) != s.numInputs+s.numPkPaths {
-	//	return nil, fmt.Errorf("expected %d arguments, got %d", s.numInputs+s.numPkPaths, len(args))
-	//}
-	//
-	//id := s.idStr
-	//if s.id != nil {
-	//	ph := s.id.(placeholder)
-	//	if ph.index <= 0 || ph.index >= len(args) {
-	//		return nil, fmt.Errorf("invalid value index %d", ph.index)
-	//	}
-	//	id = fmt.Sprintf("%s", args[ph.index-1])
-	//}
-	//restResult := s.conn.restClient.DeleteDocument(DocReq{DbName: s.dbName, CollName: s.collName, DocId: id,
-	//	PartitionKeyValues: s.extractPkValuesFromArgs(args...),
-	//})
-	//result := buildResultNoResultSet(&restResult.RestResponse, false, "", 0)
-	//switch restResult.StatusCode {
-	//case 404:
-	//	// consider "document not found" as successful operation
-	//	// but database/collection not found is not!
-	//	if strings.Contains(fmt.Sprintf("%s", restResult.Error()), "ResourceType: Document") {
-	//		result.err = nil
-	//	}
-	//}
-	//return result, result.err
 }
 
 // Query implements driver.Stmt/Query.
@@ -686,59 +646,34 @@ func (s *StmtSelect) Exec(_ []driver.Value) (driver.Result, error) {
 //	UPDATE <db-name>.<collection-name>
 //	SET <field-name1>=<value1>[,<field-nameN>=<valueN>]*
 //	WHERE id=<id-value>
-//	[WITH singlePK|SINGLE_PK[=true]]
+//	[AND pk1=<pk1-value> [AND pk2=<pk2-value> ...]]
 //
-//	- <id-value> is treated as a string. `WHERE id=abc` has the same effect as `WHERE id="abc"`.
-//	- <value> is either:
-//	  - a placeholder (e.g. :1, @2 or $3)
-//	  - a null
-//	  - a number
-//	  - a boolean (true/false)
-//	  - a string (inside double quotes) that must be a valid JSON, e.g.
-//	    - a string value in JSON (include the double quotes): "\"a string\""
-//	    - a number value in JSON (include the double quotes): "123"
-//	    - a boolean value in JSON (include the double quotes): "true"
-//	    - a null value in JSON (include the double quotes): "null"
-//	    - a map value in JSON (include the double quotes): "{\"key\":\"value\"}"
-//	    - a list value in JSON (include the double quotes): "[1,true,null,\"string\"]"
+//	- UPDATE modifies only one document specified by id.
+//	- The clause WHERE id=<id-value> is mandatory, and id is a keyword, _not_ a field name.
+//	- <id-value> and <pk-value> must be a placeholder (e.g. :1, @2 or $3), or JSON value.
 //
-// Currently UPDATE only updates one document specified by id.
+// See StmtInsert for details on <id-value> and <pk-value>.
 type StmtUpdate struct {
 	*StmtCRUD
 	updateStr string
-	idStr     string
+	whereStr  string
 	id        interface{}
 	fields    []string
 	values    []interface{}
+	pkValues  []interface{}
 }
 
-func (s *StmtUpdate) _parseId() error {
-	hasPrefix := strings.HasPrefix(s.idStr, `"`)
-	hasSuffix := strings.HasSuffix(s.idStr, `"`)
-	if hasPrefix != hasSuffix {
-		return fmt.Errorf("invalid id literate: %s", s.idStr)
-	}
-	if hasPrefix && hasSuffix {
-		s.idStr = strings.TrimSpace(s.idStr[1 : len(s.idStr)-1])
-	} else if loc := reValPlaceholder.FindStringIndex(s.idStr); loc != nil {
-		index, _ := strconv.Atoi(s.idStr[loc[0]+1:])
-		s.id = placeholder{index}
-		s.numInputs++
-	}
-	return nil
+// String implements interface fmt.Stringer/String.
+//
+// @Available since <<VERSION>>
+func (s *StmtUpdate) String() string {
+	return fmt.Sprintf(`StmtUpdate{StmtCRUD: %s, fields: %v, values: %v, where_clause: %q, id: %v, pk_values: %v}`,
+		s.StmtCRUD, s.fields, s.values, s.whereStr, s.id, s.pkValues)
 }
 
 var (
 	reFieldPart = regexp.MustCompile(`\s*([\w\-]+)\s*=`)
 )
-
-func _isSpace(r rune) bool {
-	switch r {
-	case '\t', '\n', '\v', '\f', '\r', ' ', 0x85, 0xA0, '=':
-		return true
-	}
-	return false
-}
 
 func (s *StmtUpdate) _parseUpdateClause() error {
 	s.fields = make([]string, 0)
@@ -746,7 +681,7 @@ func (s *StmtUpdate) _parseUpdateClause() error {
 	for temp := strings.TrimSpace(s.updateStr); temp != ""; temp = strings.TrimSpace(temp) {
 		// firstly, extract the field name
 		if loc := reFieldPart.FindStringIndex(temp); loc != nil && loc[0] == 0 {
-			field := strings.TrimFunc(temp[loc[0]:loc[1]], func(r rune) bool { return _isSpace(r) || r == '=' })
+			field := strings.TrimSpace(temp[loc[0] : loc[1]-1])
 			s.fields = append(s.fields, field)
 			temp = strings.TrimSpace(temp[loc[1]:])
 		} else {
@@ -758,9 +693,9 @@ func (s *StmtUpdate) _parseUpdateClause() error {
 		if err == nil {
 			s.values = append(s.values, value)
 			temp = leftOver
-			switch value.(type) {
+			switch v := value.(type) {
 			case placeholder:
-				s.numInputs++
+				s.numInputs = g18.Max(s.numInputs, v.index)
 			}
 			continue
 		}
@@ -780,19 +715,39 @@ func (s *StmtUpdate) parse(withOptsStr string) error {
 		}
 	}
 
-	if err := s._parseId(); err != nil {
+	if err := s._parseUpdateClause(); err != nil {
 		return err
 	}
 
-	if err := s._parseUpdateClause(); err != nil {
+	s.pkPaths = make([]string, 0)
+	s.pkValues = make([]interface{}, 0)
+	for temp := strings.TrimSpace(s.whereStr); temp != ""; temp = strings.TrimSpace(temp) {
+		pkPath, pkValue, leftOver, err := _parseFieldValueAnd(temp)
+		if err == nil {
+			if strings.ToLower(pkPath) == "id" {
+				s.id = pkValue
+			} else {
+				s.pkPaths = append(s.pkPaths, "/"+strings.TrimLeft(pkPath, "/"))
+				s.pkValues = append(s.pkValues, pkValue)
+			}
+			temp = leftOver
+			switch v := pkValue.(type) {
+			case placeholder:
+				s.numInputs = g18.Max(s.numInputs, v.index)
+			}
+			continue
+		}
 		return err
+	}
+	if !s.isSinglePathPk {
+		s.numPkPaths = len(s.pkPaths)
 	}
 
 	return nil
 }
 
 func (s *StmtUpdate) validate() error {
-	if s.idStr == "" {
+	if s.id == nil {
 		return errors.New("id value is missing")
 	}
 	if s.dbName == "" || s.collName == "" {
@@ -801,59 +756,81 @@ func (s *StmtUpdate) validate() error {
 	if len(s.fields) == 0 {
 		return errors.New("invalid query: SET clause is empty")
 	}
+	if s.isSinglePathPk {
+		_, _ = fmt.Fprintf(os.Stderr, "[WARN] WITH singlePK/SINGLE_PK is deprecated, please use WHERE pk=value\n")
+	}
 	return nil
 }
 
 // Exec implements driver.Stmt/Exec.
-//
-// Note: this function expects the _partition key values are placed at the end_ of the argument list.
 func (s *StmtUpdate) Exec(args []driver.Value) (driver.Result, error) {
 	if err := s.fetchPkInfo(); err != nil {
 		return nil, err
 	}
-	if len(args) != s.numInputs+s.numPkPaths {
-		return nil, fmt.Errorf("expected %d arguments, got %d", s.numInputs+s.numPkPaths, len(args))
+
+	pkValues := make([]driver.Value, s.numPkPaths)
+	if n := len(args); n == s.numInputs+s.numPkPaths {
+		_, _ = fmt.Fprintf(os.Stderr, "[WARN] suplying PK value at the end of parameter list is deprecated, please use WHERE pk=value\n")
+		copy(pkValues, args[s.numInputs:])
+		args = args[:s.numInputs]
+	} else if n == s.numInputs {
+		for i, pkValue := range s.pkValues {
+			pkValues[i] = pkValue
+		}
+	} else {
+		return nil, fmt.Errorf("expected %d or %d input values, got %d", s.numInputs, s.numInputs+s.numPkPaths, n)
+	}
+	pkValuesForApiCall := make([]any, len(pkValues))
+	for i, pkValue := range pkValues {
+		switch v := pkValue.(type) {
+		case placeholder:
+			pkValuesForApiCall[i] = args[v.index-1]
+		default:
+			pkValuesForApiCall[i] = pkValue
+		}
 	}
 
 	// firstly, fetch the document
-	id := s.idStr
-	if s.id != nil {
-		ph := s.id.(placeholder)
-		if ph.index <= 0 || ph.index >= len(args) {
-			return nil, fmt.Errorf("invalid value index %d", ph.index)
-		}
-		id = fmt.Sprintf("%s", args[ph.index-1])
+	id := s.id
+	switch v := s.id.(type) {
+	case placeholder:
+		id = args[v.index-1]
 	}
-	docReq := DocReq{DbName: s.dbName, CollName: s.collName, DocId: id, PartitionKeyValues: s.extractPkValuesFromArgs(args...)}
+	id, _ = reddo.ToString(id)
+	docReq := DocReq{
+		DbName:             s.dbName,
+		CollName:           s.collName,
+		DocId:              id.(string),
+		PartitionKeyValues: pkValuesForApiCall,
+	}
 	getDocResult := s.conn.restClient.GetDocument(docReq)
 	if err := getDocResult.Error(); err != nil {
 		result := buildResultNoResultSet(&getDocResult.RestResponse, false, "", 0)
-		if getDocResult.StatusCode == 404 {
+		switch getDocResult.StatusCode {
+		case 404:
 			// consider "document not found" as successful operation
 			// but database/collection not found is not!
 			if strings.Contains(fmt.Sprintf("%s", err), "ResourceType: Document") {
 				result.err = nil
 			}
-			//if strings.Index(fmt.Sprintf("%s", err), "ResourceType: Document") >= 0 {
-			//	result.err = nil
-			//}
 		}
 		return result, result.err
 	}
 
 	// secondly, update the fetched document
 	etag := getDocResult.DocInfo.Etag()
-	spec := DocumentSpec{DbName: s.dbName, CollName: s.collName, PartitionKeyValues: s.extractPkValuesFromArgs(args...), DocumentData: getDocResult.DocInfo.RemoveSystemAttrs()}
-	for i := 0; i < len(s.fields); i++ {
-		switch s.values[i].(type) {
+	spec := DocumentSpec{
+		DbName:             s.dbName,
+		CollName:           s.collName,
+		PartitionKeyValues: pkValuesForApiCall,
+		DocumentData:       getDocResult.DocInfo.RemoveSystemAttrs(),
+	}
+	for i, field := range s.fields {
+		switch v := s.values[i].(type) {
 		case placeholder:
-			ph := s.values[i].(placeholder)
-			if ph.index <= 0 || ph.index >= len(args) {
-				return nil, fmt.Errorf("invalid value index %d", ph.index)
-			}
-			spec.DocumentData[s.fields[i]] = args[ph.index-1]
+			spec.DocumentData[field] = args[v.index-1]
 		default:
-			spec.DocumentData[s.fields[i]] = s.values[i]
+			spec.DocumentData[field] = s.values[i]
 		}
 	}
 	replaceDocResult := s.conn.restClient.ReplaceDocument(etag, spec)
@@ -865,9 +842,6 @@ func (s *StmtUpdate) Exec(args []driver.Value) (driver.Result, error) {
 		if strings.Contains(fmt.Sprintf("%s", replaceDocResult.Error()), "ResourceType: Document") {
 			result.err = nil
 		}
-		//if strings.Index(fmt.Sprintf("%s", replaceDocResult.Error()), "ResourceType: Document") >= 0 {
-		//	result.err = nil
-		//}
 	}
 	return result, result.err
 }
