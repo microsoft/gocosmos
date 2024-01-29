@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -15,6 +16,13 @@ var (
 type Conn struct {
 	restClient *RestClient // Azure Cosmos DB REST API client.
 	defaultDb  string      // default database used in Cosmos DB operations.
+}
+
+// String implements fmt.Stringer/String.
+//
+// @Available since <<VERSION>>
+func (c *Conn) String() string {
+	return fmt.Sprintf(`Conn{default_db: %q}`, c.defaultDb)
 }
 
 // Prepare implements driver.Conn/Prepare.
@@ -48,6 +56,6 @@ func (c *Conn) BeginTx(_ context.Context, _ driver.TxOptions) (driver.Tx, error)
 
 // CheckNamedValue implements driver.NamedValueChecker/CheckNamedValue.
 func (c *Conn) CheckNamedValue(_ *driver.NamedValue) error {
-	// since Cosmos DB is document db, it accepts any value types
+	// since Cosmos DB is document db, it accepts all value types
 	return nil
 }

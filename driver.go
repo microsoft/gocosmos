@@ -1,10 +1,12 @@
 package gocosmos
 
 import (
+	"context"
 	"database/sql"
 	"database/sql/driver"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"net"
 	"strings"
 	"time"
@@ -49,7 +51,6 @@ func init() {
 			for len(myMacAddr) < 8 {
 				myMacAddr = append([]byte{0}, myMacAddr...)
 			}
-			// log.Printf("[DEBUG] gocosmos - Local IP: %s / MAC: %s", myCurrentIp, myMacAddr)
 			idGen = olaf.NewOlaf(int64(binary.BigEndian.Uint64(myMacAddr)))
 		}
 	}
@@ -88,6 +89,8 @@ var (
 	ErrQueryNotSupported = errors.New("this operation is not supported, please use Exec")
 )
 
+/*----------------------------------------------------------------------*/
+
 // Driver is Azure Cosmos DB implementation of driver.Driver.
 type Driver struct {
 }
@@ -113,4 +116,45 @@ func (d *Driver) Open(connStr string) (driver.Conn, error) {
 		defaultDb = restClient.params["DB"]
 	}
 	return &Conn{restClient: restClient, defaultDb: defaultDb}, nil
+}
+
+// OpenConnector implements driver.Driver/OpenConnector.
+//
+// @Available since <<VERSION>>
+func (d *Driver) OpenConnector(connStr string) (driver.Connector, error) {
+	conn, err := d.Open(connStr)
+	if err != nil {
+		return nil, err
+	}
+	return &Connector{
+		driver:  d,
+		connStr: connStr,
+		conn:    conn,
+	}, nil
+}
+
+/*----------------------------------------------------------------------*/
+
+// Connector is Azure Cosmos DB implementation of driver.Connector.
+//
+// @Available since <<VERSION>>
+type Connector struct {
+	driver  *Driver
+	connStr string
+	conn    driver.Conn
+}
+
+// String implements fmt.Stringer/String.
+func (c *Connector) String() string {
+	return fmt.Sprintf(`Connector{dsn: %q}`, c.connStr)
+}
+
+// Connect implements driver.Connector/Connect.
+func (c *Connector) Connect(_ context.Context) (driver.Conn, error) {
+	return c.conn, nil
+}
+
+// Driver implements driver.Connector/Driver.
+func (c *Connector) Driver() driver.Driver {
+	return c.driver
 }
