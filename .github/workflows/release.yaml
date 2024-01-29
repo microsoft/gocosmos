@@ -58,7 +58,7 @@ jobs:
       RELEASE_NOTES: ${{ needs.ReleaseDryRun.outputs.RELEASE_NOTES }}
     steps:
       - uses: actions/checkout@v4
-      - name: Update module meta
+      - name: Update module metadata
         run: |
           RESULT='${{ needs.ReleaseDryRun.outputs.RESULT }}'
           VERSION='${{ needs.ReleaseDryRun.outputs.VERSION }}'
@@ -121,6 +121,21 @@ jobs:
               prerelease: false,
             });
             console.log('✅ Created release: ', release);
+      - name: Cleanup file .semrelease/this_release
+        run: |
+          RESULT='${{ needs.ReleaseDryRun.outputs.RESULT }}'
+          if [ "${RESULT}" == "SUCCESS" ]; then
+            VERSION='${{ needs.ReleaseDryRun.outputs.VERSION }}'
+            echo "🕘 Cleaning up file .semrelease/this_release..."
+            echo > .semrelease/this_release
+            git config --global user.email "<>"
+            git config --global user.name "CI Build"
+            git commit -am "Cleanup file .semrelease/this_release post releasing version ${VERSION}"
+            git push -f
+            echo "✅ Done."
+          else
+            echo "❎ SKIPPED."
+          fi
 
   MergeToMain:
     runs-on: ubuntu-latest
