@@ -59,3 +59,11 @@ func (c *Conn) CheckNamedValue(_ *driver.NamedValue) error {
 	// since Cosmos DB is document db, it accepts all value types
 	return nil
 }
+
+// Ping implements driver.Pinger/Ping.
+//
+// @Available since <<VERSION>>
+func (c *Conn) Ping(_ context.Context) error {
+	// since connection to Cosmos DB server is stateless, Ping always returns nil
+	return nil
+}

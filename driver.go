@@ -118,7 +118,7 @@ func (d *Driver) Open(connStr string) (driver.Conn, error) {
 	return &Conn{restClient: restClient, defaultDb: defaultDb}, nil
 }
 
-// OpenConnector implements driver.Driver/OpenConnector.
+// OpenConnector implements driver.DriverContext/OpenConnector.
 //
 // @Available since <<VERSION>>
 func (d *Driver) OpenConnector(connStr string) (driver.Connector, error) {
