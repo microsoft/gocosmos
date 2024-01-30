@@ -315,6 +315,13 @@ type StmtListCollections struct {
 	dbName string
 }
 
+// String implements fmt.Stringer/String.
+//
+// @Available since <<VERSION>>
+func (s *StmtListCollections) String() string {
+	return fmt.Sprintf(`StmtListCollections{Stmt: %s, db: %q}`, s.Stmt, s.dbName)
+}
+
 func (s *StmtListCollections) validate() error {
 	if s.dbName == "" {
 		return errors.New("database is missing")
@@ -329,7 +336,19 @@ func (s *StmtListCollections) Exec(_ []driver.Value) (driver.Result, error) {
 }
 
 // Query implements driver.Stmt/Query.
-func (s *StmtListCollections) Query(_ []driver.Value) (driver.Rows, error) {
+func (s *StmtListCollections) Query(args []driver.Value) (driver.Rows, error) {
+	return s.QueryContext(context.Background(), _valuesToNamedValues(args))
+}
+
+// QueryContext implements driver.StmtQueryContext/QueryContext.
+//
+// @Available since <<VERSION>>
+func (s *StmtListCollections) QueryContext(_ context.Context, args []driver.NamedValue) (driver.Rows, error) {
+	if len(args) != 0 {
+		return nil, fmt.Errorf("expected 0 input value, got %d", len(args))
+	}
+
+	// TODO: pass ctx to REST API client
 	restResult := s.conn.restClient.ListCollections(s.dbName)
 	result := &ResultResultSet{
 		err:        restResult.Error(),
