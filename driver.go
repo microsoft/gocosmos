@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -42,6 +43,15 @@ func _myMacAddr(ip string) (net.HardwareAddr, error) {
 		}
 	}
 	return nil, errors.New("cannot fetch interface info for IP " + ip)
+}
+
+// _valuesToNamedValues transforms a []driver.Value to []driver.NamedValue.
+func _valuesToNamedValues(values []driver.Value) []driver.NamedValue {
+	result := make([]driver.NamedValue, len(values))
+	for i, v := range values {
+		result[i] = driver.NamedValue{Name: "$" + strconv.Itoa(i+1), Ordinal: i, Value: v}
+	}
+	return result
 }
 
 func init() {

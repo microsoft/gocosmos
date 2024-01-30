@@ -1,6 +1,7 @@
 package gocosmos
 
 import (
+	"context"
 	"database/sql/driver"
 	"errors"
 	"fmt"
@@ -33,6 +34,14 @@ type StmtCreateCollection struct {
 	ru, maxru   int
 	pk          string     // partition key
 	uk          [][]string // unique keys
+}
+
+// String implements fmt.Stringer/String.
+//
+// @Available since <<VERSION>>
+func (s *StmtCreateCollection) String() string {
+	return fmt.Sprintf(`StmtCreateCollection{Stmt: %s, db: %q, collection: %q, if_not_exists: %t, ru: %d, maxru: %d, pk: %q, uk: %v}`,
+		s.Stmt, s.dbName, s.collName, s.ifNotExists, s.ru, s.maxru, s.pk, s.uk)
 }
 
 func (s *StmtCreateCollection) parse(withOptsStr string) error {
@@ -93,7 +102,18 @@ func (s *StmtCreateCollection) Query(_ []driver.Value) (driver.Rows, error) {
 }
 
 // Exec implements driver.Stmt/Exec.
-func (s *StmtCreateCollection) Exec(_ []driver.Value) (driver.Result, error) {
+func (s *StmtCreateCollection) Exec(args []driver.Value) (driver.Result, error) {
+	return s.ExecContext(context.Background(), _valuesToNamedValues(args))
+}
+
+// ExecContext implements driver.StmtExecContext/ExecContext.
+//
+// @Available since <<VERSION>>
+func (s *StmtCreateCollection) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
+	if len(args) != 0 {
+		return nil, fmt.Errorf("expected 0 input value, got %d", len(args))
+	}
+
 	pkPaths := strings.Split(s.pk, ",")
 	pkType := "Hash"
 	if len(pkPaths) > 1 {
@@ -114,6 +134,7 @@ func (s *StmtCreateCollection) Exec(_ []driver.Value) (driver.Result, error) {
 		spec.UniqueKeyPolicy = map[string]interface{}{"uniqueKeys": uniqueKeys}
 	}
 
+	// TODO: pass ctx to REST API client
 	restResult := s.conn.restClient.CreateCollection(spec)
 	ignoreErrorCode := 0
 	if s.ifNotExists {
