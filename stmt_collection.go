@@ -166,7 +166,7 @@ type StmtAlterCollection struct {
 //
 // @Available since <<VERSION>>
 func (s *StmtAlterCollection) String() string {
-	return fmt.Sprintf(`StmtAlterCollection{Stmt: %s, db: %q, collection: %q,  ru: %d, maxru: %d}`,
+	return fmt.Sprintf(`StmtAlterCollection{Stmt: %s, db: %q, collection: %q, ru: %d, maxru: %d}`,
 		s.Stmt, s.dbName, s.collName, s.ru, s.maxru)
 }
 
@@ -259,6 +259,14 @@ type StmtDropCollection struct {
 	ifExists bool
 }
 
+// String implements fmt.Stringer/String.
+//
+// @Available since <<VERSION>>
+func (s *StmtDropCollection) String() string {
+	return fmt.Sprintf(`StmtDropCollection{Stmt: %s, db: %q, collection: %q, if_exists: %t}`,
+		s.Stmt, s.dbName, s.collName, s.ifExists)
+}
+
 func (s *StmtDropCollection) validate() error {
 	if s.dbName == "" || s.collName == "" {
 		return errors.New("database/collection is missing")
@@ -273,7 +281,19 @@ func (s *StmtDropCollection) Query(_ []driver.Value) (driver.Rows, error) {
 }
 
 // Exec implements driver.Stmt/Exec.
-func (s *StmtDropCollection) Exec(_ []driver.Value) (driver.Result, error) {
+func (s *StmtDropCollection) Exec(args []driver.Value) (driver.Result, error) {
+	return s.ExecContext(context.Background(), _valuesToNamedValues(args))
+}
+
+// ExecContext implements driver.StmtExecContext/ExecContext.
+//
+// @Available since <<VERSION>>
+func (s *StmtDropCollection) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
+	if len(args) != 0 {
+		return nil, fmt.Errorf("expected 0 input value, got %d", len(args))
+	}
+
+	// TODO: pass ctx to REST API client
 	restResult := s.conn.restClient.DeleteCollection(s.dbName, s.collName)
 	ignoreErrorCode := 0
 	if s.ifExists {
