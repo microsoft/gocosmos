@@ -162,6 +162,14 @@ type StmtAlterCollection struct {
 	ru, maxru int
 }
 
+// String implements fmt.Stringer/String.
+//
+// @Available since <<VERSION>>
+func (s *StmtAlterCollection) String() string {
+	return fmt.Sprintf(`StmtAlterCollection{Stmt: %s, db: %q, collection: %q,  ru: %d, maxru: %d}`,
+		s.Stmt, s.dbName, s.collName, s.ru, s.maxru)
+}
+
 func (s *StmtAlterCollection) parse(withOptsStr string) error {
 	if err := s.Stmt.parseWithOpts(withOptsStr); err != nil {
 		return err
@@ -206,7 +214,18 @@ func (s *StmtAlterCollection) Query(_ []driver.Value) (driver.Rows, error) {
 }
 
 // Exec implements driver.Stmt/Exec.
-func (s *StmtAlterCollection) Exec(_ []driver.Value) (driver.Result, error) {
+func (s *StmtAlterCollection) Exec(args []driver.Value) (driver.Result, error) {
+	return s.ExecContext(context.Background(), _valuesToNamedValues(args))
+}
+
+// ExecContext implements driver.StmtExecContext/ExecContext.
+//
+// @Available since <<VERSION>>
+func (s *StmtAlterCollection) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
+	if len(args) != 0 {
+		return nil, fmt.Errorf("expected 0 input value, got %d", len(args))
+	}
+
 	getResult := s.conn.restClient.GetCollection(s.dbName, s.collName)
 	if err := getResult.Error(); err != nil {
 		switch getResult.StatusCode {
@@ -217,6 +236,8 @@ func (s *StmtAlterCollection) Exec(_ []driver.Value) (driver.Result, error) {
 		}
 		return nil, err
 	}
+
+	// TODO: pass ctx to REST API client
 	restResult := s.conn.restClient.ReplaceOfferForResource(getResult.Rid, s.ru, s.maxru)
 	result := buildResultNoResultSet(&restResult.RestResponse, true, restResult.Rid, 0)
 	return result, result.err
