@@ -1,6 +1,7 @@
 package gocosmos
 
 import (
+	"context"
 	"database/sql/driver"
 	"errors"
 	"fmt"
@@ -21,6 +22,14 @@ type StmtCreateDatabase struct {
 	dbName      string
 	ifNotExists bool
 	ru, maxru   int
+}
+
+// String implements fmt.Stringer/String.
+//
+// @Available since <<VERSION>>
+func (s *StmtCreateDatabase) String() string {
+	return fmt.Sprintf(`StmtCreateDatabase{Stmt: %s, db: %q,  if_not_exists: %t, ru: %d, maxru: %d}`,
+		s.Stmt, s.dbName, s.ifNotExists, s.ru, s.maxru)
 }
 
 func (s *StmtCreateDatabase) parse(withOptsStr string) error {
@@ -64,7 +73,19 @@ func (s *StmtCreateDatabase) Query(_ []driver.Value) (driver.Rows, error) {
 }
 
 // Exec implements driver.Stmt/Exec.
-func (s *StmtCreateDatabase) Exec(_ []driver.Value) (driver.Result, error) {
+func (s *StmtCreateDatabase) Exec(args []driver.Value) (driver.Result, error) {
+	return s.ExecContext(context.Background(), _valuesToNamedValues(args))
+}
+
+// ExecContext implements driver.StmtExecContext/ExecContext.
+//
+// @Available since <<VERSION>>
+func (s *StmtCreateDatabase) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
+	if len(args) != 0 {
+		return nil, fmt.Errorf("expected 0 input value, got %d", len(args))
+	}
+
+	// TODO: pass ctx to REST API client
 	restResult := s.conn.restClient.CreateDatabase(DatabaseSpec{Id: s.dbName, Ru: s.ru, MaxRu: s.maxru})
 	ignoreErrorCode := 0
 	if s.ifNotExists {
