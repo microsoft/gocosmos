@@ -204,6 +204,14 @@ type StmtDropDatabase struct {
 	ifExists bool
 }
 
+// String implements fmt.Stringer/String.
+//
+// @Available since <<VERSION>>
+func (s *StmtDropDatabase) String() string {
+	return fmt.Sprintf(`StmtDropDatabase{Stmt: %s, db: %q, if_exists: %t}`,
+		s.Stmt, s.dbName, s.ifExists)
+}
+
 func (s *StmtDropDatabase) validate() error {
 	return nil
 }
@@ -215,7 +223,19 @@ func (s *StmtDropDatabase) Query(_ []driver.Value) (driver.Rows, error) {
 }
 
 // Exec implements driver.Stmt/Exec.
-func (s *StmtDropDatabase) Exec(_ []driver.Value) (driver.Result, error) {
+func (s *StmtDropDatabase) Exec(args []driver.Value) (driver.Result, error) {
+	return s.ExecContext(context.Background(), _valuesToNamedValues(args))
+}
+
+// ExecContext implements driver.StmtExecContext/ExecContext.
+//
+// @Available since <<VERSION>>
+func (s *StmtDropDatabase) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
+	if len(args) != 0 {
+		return nil, fmt.Errorf("expected 0 input value, got %d", len(args))
+	}
+
+	// TODO: pass ctx to REST API client
 	restResult := s.conn.restClient.DeleteDatabase(s.dbName)
 	ignoreErrorCode := 0
 	if s.ifExists {
