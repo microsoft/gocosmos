@@ -112,6 +112,14 @@ type StmtAlterDatabase struct {
 	ru, maxru int
 }
 
+// String implements fmt.Stringer/String.
+//
+// @Available since <<VERSION>>
+func (s *StmtAlterDatabase) String() string {
+	return fmt.Sprintf(`StmtAlterDatabase{Stmt: %s, db: %q, ru: %d, maxru: %d}`,
+		s.Stmt, s.dbName, s.ru, s.maxru)
+}
+
 func (s *StmtAlterDatabase) parse(withOptsStr string) error {
 	if err := s.Stmt.parseWithOpts(withOptsStr); err != nil {
 		return err
@@ -153,7 +161,19 @@ func (s *StmtAlterDatabase) Query(_ []driver.Value) (driver.Rows, error) {
 }
 
 // Exec implements driver.Stmt/Exec.
-func (s *StmtAlterDatabase) Exec(_ []driver.Value) (driver.Result, error) {
+func (s *StmtAlterDatabase) Exec(args []driver.Value) (driver.Result, error) {
+	return s.ExecContext(context.Background(), _valuesToNamedValues(args))
+}
+
+// ExecContext implements driver.StmtExecContext/ExecContext.
+//
+// @Available since <<VERSION>>
+func (s *StmtAlterDatabase) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
+	if len(args) != 0 {
+		return nil, fmt.Errorf("expected 0 input value, got %d", len(args))
+	}
+
+	// TODO: pass ctx to REST API client
 	getResult := s.conn.restClient.GetDatabase(s.dbName)
 	if err := getResult.Error(); err != nil {
 		switch getResult.StatusCode {
