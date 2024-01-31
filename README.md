@@ -1,9 +1,14 @@
+**Please note, this is an EXPERIMENTAL non production package. We do not provide official support for this package**
+
+**Please use our official package [azcosmos](https://github.com/Azure/azure-sdk-for-go/blob/main/sdk/data/azcosmos/README.md) in production**
+
 # gocosmos
 
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/microsoft/gocosmos)](https://pkg.go.dev/github.com/microsoft/gocosmos)
 [![Actions Status](https://github.com/microsoft/gocosmos/workflows/ci/badge.svg)](https://github.com/microsoft/gocosmos/actions)
 [![codecov](https://codecov.io/gh/microsoft/gocosmos/branch/main/graph/badge.svg)](https://codecov.io/gh/microsoft/gocosmos)
 [![Release](https://img.shields.io/github/release/microsoft/gocosmos.svg?style=flat-square)](RELEASE-NOTES.md)
+[![Status](https://img.shields.io/badge/Status-Experimental-red)](https://shields.io/)
 
 Go driver for [Azure Cosmos DB SQL API](https://azure.microsoft.com/services/cosmos-db/) which can be used with the standard [database/sql](https://golang.org/pkg/database/sql/) package. A REST client is also included.
 
