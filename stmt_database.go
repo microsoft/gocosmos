@@ -256,6 +256,13 @@ type StmtListDatabases struct {
 	*Stmt
 }
 
+// String implements fmt.Stringer/String.
+//
+// @Available since <<VERSION>>
+func (s *StmtListDatabases) String() string {
+	return fmt.Sprintf(`StmtListDatabases{Stmt: %s}`, s.Stmt)
+}
+
 func (s *StmtListDatabases) validate() error {
 	return nil
 }
@@ -267,7 +274,19 @@ func (s *StmtListDatabases) Exec(_ []driver.Value) (driver.Result, error) {
 }
 
 // Query implements driver.Stmt/Query.
-func (s *StmtListDatabases) Query(_ []driver.Value) (driver.Rows, error) {
+func (s *StmtListDatabases) Query(args []driver.Value) (driver.Rows, error) {
+	return s.QueryContext(context.Background(), _valuesToNamedValues(args))
+}
+
+// QueryContext implements driver.StmtQueryContext/QueryContext.
+//
+// @Available since <<VERSION>>
+func (s *StmtListDatabases) QueryContext(_ context.Context, args []driver.NamedValue) (driver.Rows, error) {
+	if len(args) != 0 {
+		return nil, fmt.Errorf("expected 0 input value, got %d", len(args))
+	}
+
+	// TODO: pass ctx to REST API client
 	restResult := s.conn.restClient.ListDatabases()
 	result := &ResultResultSet{
 		err:        restResult.Error(),
