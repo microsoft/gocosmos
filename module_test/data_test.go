@@ -54,7 +54,6 @@ func _initDataSubPartitions(t *testing.T, testName string, client *gocosmos.Rest
 			totalRu += result.RequestCharge
 		}
 	}
-	// fmt.Printf("\t%s - total RU charged: %0.3f\n", testName+"/Insert", totalRu)
 }
 
 func _initDataSubPartitionsSmallRU(t *testing.T, testName string, client *gocosmos.RestClient, db, container string, numItem int) {
@@ -110,7 +109,6 @@ func _initData(t *testing.T, testName string, client *gocosmos.RestClient, db, c
 			totalRu += result.RequestCharge
 		}
 	}
-	// fmt.Printf("\t%s - total RU charged: %0.3f\n", testName+"/Insert", totalRu)
 }
 
 func _initDataSmallRU(t *testing.T, testName string, client *gocosmos.RestClient, db, container string, numItem int) {
@@ -168,7 +166,7 @@ func _initDataFamilies(t *testing.T, testName string, client *gocosmos.RestClien
 	}
 }
 
-func _initDataFamliesSmallRU(t *testing.T, testName string, client *gocosmos.RestClient, db, container string) {
+func _initDataFamiliesSmallRU(t *testing.T, testName string, client *gocosmos.RestClient, db, container string) {
 	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: db, Ru: 400})
 	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           db,
@@ -179,7 +177,7 @@ func _initDataFamliesSmallRU(t *testing.T, testName string, client *gocosmos.Res
 	_initDataFamilies(t, testName, client, db, container)
 }
 
-func _initDataFamliesLargeRU(t *testing.T, testName string, client *gocosmos.RestClient, db, container string) {
+func _initDataFamiliesLargeRU(t *testing.T, testName string, client *gocosmos.RestClient, db, container string) {
 	_ensureDatabase(client, gocosmos.DatabaseSpec{Id: db, Ru: 20000})
 	_ensureCollection(client, gocosmos.CollectionSpec{
 		DbName:           db,
