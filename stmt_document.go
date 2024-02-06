@@ -359,7 +359,7 @@ func (s *StmtInsert) ExecContext(_ context.Context, args []driver.NamedValue) (d
 	for i, pkValue := range pkValues {
 		switch v := pkValue.Value.(type) {
 		case placeholder:
-			spec.PartitionKeyValues[i] = args[v.index-1]
+			spec.PartitionKeyValues[i] = args[v.index-1].Value
 		default:
 			spec.PartitionKeyValues[i] = v
 		}
@@ -367,7 +367,7 @@ func (s *StmtInsert) ExecContext(_ context.Context, args []driver.NamedValue) (d
 	for i, field := range s.fields {
 		switch v := s.values[i].(type) {
 		case placeholder:
-			spec.DocumentData[field] = args[v.index-1]
+			spec.DocumentData[field] = args[v.index-1].Value
 		default:
 			spec.DocumentData[field] = s.values[i]
 		}
@@ -501,7 +501,7 @@ func (s *StmtDelete) ExecContext(_ context.Context, args []driver.NamedValue) (d
 	id := s.id
 	switch v := s.id.(type) {
 	case placeholder:
-		id = args[v.index-1]
+		id = args[v.index-1].Value
 	}
 	id, _ = reddo.ToString(id)
 
@@ -515,7 +515,7 @@ func (s *StmtDelete) ExecContext(_ context.Context, args []driver.NamedValue) (d
 	for i, pkValue := range pkValues {
 		switch v := pkValue.Value.(type) {
 		case placeholder:
-			docReq.PartitionKeyValues[i] = args[v.index-1]
+			docReq.PartitionKeyValues[i] = args[v.index-1].Value
 		default:
 			docReq.PartitionKeyValues[i] = v
 		}
