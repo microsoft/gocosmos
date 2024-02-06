@@ -1,6 +1,7 @@
 package gocosmos
 
 import (
+	"context"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
@@ -314,11 +315,20 @@ func (s *StmtInsert) validate() error {
 
 // Exec implements driver.Stmt/Exec.
 func (s *StmtInsert) Exec(args []driver.Value) (driver.Result, error) {
+	return s.ExecContext(context.Background(), _valuesToNamedValues(args))
+}
+
+// ExecContext implements driver.StmtExecContext/ExecContext.
+//
+// @Available since <<VERSION>>
+func (s *StmtInsert) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
+	// TODO: pass ctx to REST API client
+
 	if err := s.fetchPkInfo(); err != nil {
 		return nil, err
 	}
 
-	pkValues := make([]driver.Value, s.numPkPaths)
+	pkValues := make([]driver.NamedValue, s.numPkPaths)
 	if n := len(args); n == s.numInputs+s.numPkPaths {
 		_, _ = fmt.Fprintf(os.Stderr, "[WARN] supplying PK value at the end of parameter list is deprecated, please use WITH PK\n")
 		copy(pkValues, args[s.numInputs:])
@@ -328,12 +338,12 @@ func (s *StmtInsert) Exec(args []driver.Value) (driver.Result, error) {
 		for i, field := range s.fields {
 			fieldValMap[field] = s.values[i]
 		}
-		var ok bool
 		for i, pkPath := range s.pkPaths {
-			pkValues[i], ok = fieldValMap[pkPath[1:]]
+			v, ok := fieldValMap[pkPath[1:]]
 			if !ok {
 				return nil, fmt.Errorf("missing value for PK %s", pkPath)
 			}
+			pkValues[i] = driver.NamedValue{Name: pkPath[1:], Value: v}
 		}
 	} else {
 		return nil, fmt.Errorf("expected %d or %d input values, got %d", s.numInputs, s.numInputs+s.numPkPaths, n)
@@ -347,7 +357,7 @@ func (s *StmtInsert) Exec(args []driver.Value) (driver.Result, error) {
 		DocumentData:       make(map[string]any),
 	}
 	for i, pkValue := range pkValues {
-		switch v := pkValue.(type) {
+		switch v := pkValue.Value.(type) {
 		case placeholder:
 			spec.PartitionKeyValues[i] = args[v.index-1]
 		default:
