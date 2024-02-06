@@ -361,7 +361,7 @@ func (s *StmtInsert) ExecContext(_ context.Context, args []driver.NamedValue) (d
 		case placeholder:
 			spec.PartitionKeyValues[i] = args[v.index-1]
 		default:
-			spec.PartitionKeyValues[i] = pkValue
+			spec.PartitionKeyValues[i] = v
 		}
 	}
 	for i, field := range s.fields {
@@ -472,18 +472,27 @@ func (s *StmtDelete) validate() error {
 
 // Exec implements driver.Stmt/Exec.
 func (s *StmtDelete) Exec(args []driver.Value) (driver.Result, error) {
+	return s.ExecContext(context.Background(), _valuesToNamedValues(args))
+}
+
+// ExecContext implements driver.StmtExecContext/ExecContext.
+//
+// @Available since <<VERSION>>
+func (s *StmtDelete) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
+	// TODO: pass ctx to REST API client
+
 	if err := s.fetchPkInfo(); err != nil {
 		return nil, err
 	}
 
-	pkValues := make([]driver.Value, s.numPkPaths)
+	pkValues := make([]driver.NamedValue, s.numPkPaths)
 	if n := len(args); n == s.numInputs+s.numPkPaths {
 		_, _ = fmt.Fprintf(os.Stderr, "[WARN] supplying PK value at the end of parameter list is deprecated, please use WHERE pk=value\n")
 		copy(pkValues, args[s.numInputs:])
 		args = args[:s.numInputs]
 	} else if n == s.numInputs {
 		for i, pkValue := range s.pkValues {
-			pkValues[i] = pkValue
+			pkValues[i] = driver.NamedValue{Name: s.pkPaths[i][1:], Value: pkValue}
 		}
 	} else {
 		return nil, fmt.Errorf("expected %d or %d input values, got %d", s.numInputs, s.numInputs+s.numPkPaths, n)
@@ -504,11 +513,11 @@ func (s *StmtDelete) Exec(args []driver.Value) (driver.Result, error) {
 	}
 
 	for i, pkValue := range pkValues {
-		switch v := pkValue.(type) {
+		switch v := pkValue.Value.(type) {
 		case placeholder:
 			docReq.PartitionKeyValues[i] = args[v.index-1]
 		default:
-			docReq.PartitionKeyValues[i] = pkValue
+			docReq.PartitionKeyValues[i] = v
 		}
 	}
 
@@ -628,13 +637,22 @@ func (s *StmtSelect) validate() error {
 
 // Query implements driver.Stmt/Query.
 func (s *StmtSelect) Query(args []driver.Value) (driver.Rows, error) {
+	return s.QueryContext(context.Background(), _valuesToNamedValues(args))
+}
+
+// QueryContext implements driver.StmtQueryContext/QueryContext.
+//
+// @Available since <<VERSION>>
+func (s *StmtSelect) QueryContext(_ context.Context, args []driver.NamedValue) (driver.Rows, error) {
+	// TODO: pass ctx to REST API client
+
 	params := make([]interface{}, 0)
 	for i, arg := range args {
 		v, ok := s.placeholders[i+1]
 		if !ok {
 			return nil, fmt.Errorf("there is no placeholder #%d", i+1)
 		}
-		params = append(params, map[string]interface{}{"name": v, "value": arg})
+		params = append(params, map[string]interface{}{"name": v, "value": arg.Value})
 	}
 	query := QueryReq{
 		DbName:                s.dbName,
