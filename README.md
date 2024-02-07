@@ -8,7 +8,7 @@
 [![Actions Status](https://github.com/microsoft/gocosmos/workflows/ci/badge.svg)](https://github.com/microsoft/gocosmos/actions)
 [![codecov](https://codecov.io/gh/microsoft/gocosmos/branch/main/graph/badge.svg)](https://codecov.io/gh/microsoft/gocosmos)
 [![Release](https://img.shields.io/github/release/microsoft/gocosmos.svg?style=flat-square)](RELEASE-NOTES.md)
-[![Status](https://img.shields.io/badge/Status-Experimental-red)](https://shields.io/)
+[![Status](https://img.shields.io/badge/Status-Experimental-red)](SUPPORT.md)
 
 Go driver for [Azure Cosmos DB SQL API](https://azure.microsoft.com/services/cosmos-db/) which can be used with the standard [database/sql](https://golang.org/pkg/database/sql/) package. A REST client is also included.
 
