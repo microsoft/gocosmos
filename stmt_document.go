@@ -838,7 +838,7 @@ func (s *StmtUpdate) ExecContext(_ context.Context, args []driver.NamedValue) (d
 		case placeholder:
 			pkValuesForApiCall[i] = args[v.index-1].Value
 		default:
-			pkValuesForApiCall[i] = pkValue
+			pkValuesForApiCall[i] = v
 		}
 	}
 
@@ -880,7 +880,7 @@ func (s *StmtUpdate) ExecContext(_ context.Context, args []driver.NamedValue) (d
 	for i, field := range s.fields {
 		switch v := s.values[i].(type) {
 		case placeholder:
-			spec.DocumentData[field] = args[v.index-1]
+			spec.DocumentData[field] = args[v.index-1].Value
 		default:
 			spec.DocumentData[field] = s.values[i]
 		}
