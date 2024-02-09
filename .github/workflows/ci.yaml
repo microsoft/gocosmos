@@ -337,9 +337,16 @@ jobs:
       - name: Run tests
         run: |
           & "C:\Program Files\Azure Cosmos DB Emulator\Microsoft.Azure.Cosmos.Emulator.exe" /DisableRateLimiting /NoUI /NoExplorer
-          Start-Sleep -s 90
           ps Microsoft.Azure.Cosmos.Emulator
-          Invoke-RestMethod -Method GET https://127.0.0.1:8081/_explorer/index.html
+          while($true) {
+            try { 
+              Invoke-RestMethod -Method GET https://127.0.0.1:8081/_explorer/index.html
+              break
+            } catch { 
+              echo "CosmosDB Emulator not ready, retry in 10 seconds..."
+              Start-Sleep -s 10
+            }
+          }
           $env:COSMOSDB_URL='AccountEndpoint=https://127.0.0.1:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;TimeoutMs=30000'
           cd module_test
           go test -v -timeout 9999s -count 1 -p 1 -cover -coverpkg="$env:COVER_PKG" -coverprofile="../coverage_all.txt" ./
