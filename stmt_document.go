@@ -1,6 +1,7 @@
 package gocosmos
 
 import (
+	"context"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
@@ -314,11 +315,20 @@ func (s *StmtInsert) validate() error {
 
 // Exec implements driver.Stmt/Exec.
 func (s *StmtInsert) Exec(args []driver.Value) (driver.Result, error) {
+	return s.ExecContext(context.Background(), _valuesToNamedValues(args))
+}
+
+// ExecContext implements driver.StmtExecContext/ExecContext.
+//
+// @Available since v1.1.1
+func (s *StmtInsert) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
+	// TODO: pass ctx to REST API client
+
 	if err := s.fetchPkInfo(); err != nil {
 		return nil, err
 	}
 
-	pkValues := make([]driver.Value, s.numPkPaths)
+	pkValues := make([]driver.NamedValue, s.numPkPaths)
 	if n := len(args); n == s.numInputs+s.numPkPaths {
 		_, _ = fmt.Fprintf(os.Stderr, "[WARN] supplying PK value at the end of parameter list is deprecated, please use WITH PK\n")
 		copy(pkValues, args[s.numInputs:])
@@ -328,12 +338,12 @@ func (s *StmtInsert) Exec(args []driver.Value) (driver.Result, error) {
 		for i, field := range s.fields {
 			fieldValMap[field] = s.values[i]
 		}
-		var ok bool
 		for i, pkPath := range s.pkPaths {
-			pkValues[i], ok = fieldValMap[pkPath[1:]]
+			v, ok := fieldValMap[pkPath[1:]]
 			if !ok {
 				return nil, fmt.Errorf("missing value for PK %s", pkPath)
 			}
+			pkValues[i] = driver.NamedValue{Name: pkPath[1:], Value: v}
 		}
 	} else {
 		return nil, fmt.Errorf("expected %d or %d input values, got %d", s.numInputs, s.numInputs+s.numPkPaths, n)
@@ -347,17 +357,17 @@ func (s *StmtInsert) Exec(args []driver.Value) (driver.Result, error) {
 		DocumentData:       make(map[string]any),
 	}
 	for i, pkValue := range pkValues {
-		switch v := pkValue.(type) {
+		switch v := pkValue.Value.(type) {
 		case placeholder:
-			spec.PartitionKeyValues[i] = args[v.index-1]
+			spec.PartitionKeyValues[i] = args[v.index-1].Value
 		default:
-			spec.PartitionKeyValues[i] = pkValue
+			spec.PartitionKeyValues[i] = v
 		}
 	}
 	for i, field := range s.fields {
 		switch v := s.values[i].(type) {
 		case placeholder:
-			spec.DocumentData[field] = args[v.index-1]
+			spec.DocumentData[field] = args[v.index-1].Value
 		default:
 			spec.DocumentData[field] = s.values[i]
 		}
@@ -462,18 +472,27 @@ func (s *StmtDelete) validate() error {
 
 // Exec implements driver.Stmt/Exec.
 func (s *StmtDelete) Exec(args []driver.Value) (driver.Result, error) {
+	return s.ExecContext(context.Background(), _valuesToNamedValues(args))
+}
+
+// ExecContext implements driver.StmtExecContext/ExecContext.
+//
+// @Available since v1.1.1
+func (s *StmtDelete) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
+	// TODO: pass ctx to REST API client
+
 	if err := s.fetchPkInfo(); err != nil {
 		return nil, err
 	}
 
-	pkValues := make([]driver.Value, s.numPkPaths)
+	pkValues := make([]driver.NamedValue, s.numPkPaths)
 	if n := len(args); n == s.numInputs+s.numPkPaths {
 		_, _ = fmt.Fprintf(os.Stderr, "[WARN] supplying PK value at the end of parameter list is deprecated, please use WHERE pk=value\n")
 		copy(pkValues, args[s.numInputs:])
 		args = args[:s.numInputs]
 	} else if n == s.numInputs {
 		for i, pkValue := range s.pkValues {
-			pkValues[i] = pkValue
+			pkValues[i] = driver.NamedValue{Name: s.pkPaths[i][1:], Value: pkValue}
 		}
 	} else {
 		return nil, fmt.Errorf("expected %d or %d input values, got %d", s.numInputs, s.numInputs+s.numPkPaths, n)
@@ -482,7 +501,7 @@ func (s *StmtDelete) Exec(args []driver.Value) (driver.Result, error) {
 	id := s.id
 	switch v := s.id.(type) {
 	case placeholder:
-		id = args[v.index-1]
+		id = args[v.index-1].Value
 	}
 	id, _ = reddo.ToString(id)
 
@@ -494,11 +513,11 @@ func (s *StmtDelete) Exec(args []driver.Value) (driver.Result, error) {
 	}
 
 	for i, pkValue := range pkValues {
-		switch v := pkValue.(type) {
+		switch v := pkValue.Value.(type) {
 		case placeholder:
-			docReq.PartitionKeyValues[i] = args[v.index-1]
+			docReq.PartitionKeyValues[i] = args[v.index-1].Value
 		default:
-			docReq.PartitionKeyValues[i] = pkValue
+			docReq.PartitionKeyValues[i] = v
 		}
 	}
 
@@ -618,13 +637,22 @@ func (s *StmtSelect) validate() error {
 
 // Query implements driver.Stmt/Query.
 func (s *StmtSelect) Query(args []driver.Value) (driver.Rows, error) {
+	return s.QueryContext(context.Background(), _valuesToNamedValues(args))
+}
+
+// QueryContext implements driver.StmtQueryContext/QueryContext.
+//
+// @Available since v1.1.1
+func (s *StmtSelect) QueryContext(_ context.Context, args []driver.NamedValue) (driver.Rows, error) {
+	// TODO: pass ctx to REST API client
+
 	params := make([]interface{}, 0)
 	for i, arg := range args {
 		v, ok := s.placeholders[i+1]
 		if !ok {
 			return nil, fmt.Errorf("there is no placeholder #%d", i+1)
 		}
-		params = append(params, map[string]interface{}{"name": v, "value": arg})
+		params = append(params, map[string]interface{}{"name": v, "value": arg.Value})
 	}
 	query := QueryReq{
 		DbName:                s.dbName,
@@ -779,29 +807,38 @@ func (s *StmtUpdate) validate() error {
 
 // Exec implements driver.Stmt/Exec.
 func (s *StmtUpdate) Exec(args []driver.Value) (driver.Result, error) {
+	return s.ExecContext(context.Background(), _valuesToNamedValues(args))
+}
+
+// ExecContext implements driver.StmtExecContext/ExecContext.
+//
+// @Available since v1.1.1
+func (s *StmtUpdate) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
+	// TODO: pass ctx to REST API client
+
 	if err := s.fetchPkInfo(); err != nil {
 		return nil, err
 	}
 
-	pkValues := make([]driver.Value, s.numPkPaths)
+	pkValues := make([]driver.NamedValue, s.numPkPaths)
 	if n := len(args); n == s.numInputs+s.numPkPaths {
 		_, _ = fmt.Fprintf(os.Stderr, "[WARN] suplying PK value at the end of parameter list is deprecated, please use WHERE pk=value\n")
 		copy(pkValues, args[s.numInputs:])
 		args = args[:s.numInputs]
 	} else if n == s.numInputs {
 		for i, pkValue := range s.pkValues {
-			pkValues[i] = pkValue
+			pkValues[i] = driver.NamedValue{Name: s.pkPaths[i][1:], Value: pkValue}
 		}
 	} else {
 		return nil, fmt.Errorf("expected %d or %d input values, got %d", s.numInputs, s.numInputs+s.numPkPaths, n)
 	}
 	pkValuesForApiCall := make([]any, len(pkValues))
 	for i, pkValue := range pkValues {
-		switch v := pkValue.(type) {
+		switch v := pkValue.Value.(type) {
 		case placeholder:
-			pkValuesForApiCall[i] = args[v.index-1]
+			pkValuesForApiCall[i] = args[v.index-1].Value
 		default:
-			pkValuesForApiCall[i] = pkValue
+			pkValuesForApiCall[i] = v
 		}
 	}
 
@@ -809,7 +846,7 @@ func (s *StmtUpdate) Exec(args []driver.Value) (driver.Result, error) {
 	id := s.id
 	switch v := s.id.(type) {
 	case placeholder:
-		id = args[v.index-1]
+		id = args[v.index-1].Value
 	}
 	id, _ = reddo.ToString(id)
 	docReq := DocReq{
@@ -843,7 +880,7 @@ func (s *StmtUpdate) Exec(args []driver.Value) (driver.Result, error) {
 	for i, field := range s.fields {
 		switch v := s.values[i].(type) {
 		case placeholder:
-			spec.DocumentData[field] = args[v.index-1]
+			spec.DocumentData[field] = args[v.index-1].Value
 		default:
 			spec.DocumentData[field] = s.values[i]
 		}

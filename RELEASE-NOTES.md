@@ -1,5 +1,19 @@
 # gocosmos - Release notes
 
+## 2024-02-09 - v1.1.1
+
+### Fixed/Improvement
+
+- Improvement: implement fmt.Stringer
+- Improvement: Driver implements interface driver.DriverContext
+- Improvement: Conn implements interface driver.Pinger
+- Improvement: StmtCreateCollection/StmtAlterCollection/StmtDropCollection implements interface driver.StmtExecContext
+- Improvement: StmtListCollections implements interface driver.StmtQueryContext
+- Improvement: StmtCreateDatabase/StmtAlterDatabase/StmtDropDatabase implements interface driver.StmtExecContext
+- Improvement: StmtListDatabases implements interface driver.StmtQueryContext
+- Improvement: StmtInsert/StmtDelete/StmtUpdate implements interface driver.StmtExecContext
+- Improvement: StmtSelect implements interface driver.StmtQueryContext
+
 ## 2024-01-29 - v1.1.0
 
 ### Added/Refactoring
