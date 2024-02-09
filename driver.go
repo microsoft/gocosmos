@@ -130,7 +130,7 @@ func (d *Driver) Open(connStr string) (driver.Conn, error) {
 
 // OpenConnector implements driver.DriverContext/OpenConnector.
 //
-// @Available since <<VERSION>>
+// @Available since v1.1.1
 func (d *Driver) OpenConnector(connStr string) (driver.Connector, error) {
 	conn, err := d.Open(connStr)
 	if err != nil {
@@ -147,7 +147,7 @@ func (d *Driver) OpenConnector(connStr string) (driver.Connector, error) {
 
 // Connector is Azure Cosmos DB implementation of driver.Connector.
 //
-// @Available since <<VERSION>>
+// @Available since v1.1.1
 type Connector struct {
 	driver  *Driver
 	connStr string

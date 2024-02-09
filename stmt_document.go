@@ -320,7 +320,7 @@ func (s *StmtInsert) Exec(args []driver.Value) (driver.Result, error) {
 
 // ExecContext implements driver.StmtExecContext/ExecContext.
 //
-// @Available since <<VERSION>>
+// @Available since v1.1.1
 func (s *StmtInsert) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
 	// TODO: pass ctx to REST API client
 
@@ -477,7 +477,7 @@ func (s *StmtDelete) Exec(args []driver.Value) (driver.Result, error) {
 
 // ExecContext implements driver.StmtExecContext/ExecContext.
 //
-// @Available since <<VERSION>>
+// @Available since v1.1.1
 func (s *StmtDelete) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
 	// TODO: pass ctx to REST API client
 
@@ -642,7 +642,7 @@ func (s *StmtSelect) Query(args []driver.Value) (driver.Rows, error) {
 
 // QueryContext implements driver.StmtQueryContext/QueryContext.
 //
-// @Available since <<VERSION>>
+// @Available since v1.1.1
 func (s *StmtSelect) QueryContext(_ context.Context, args []driver.NamedValue) (driver.Rows, error) {
 	// TODO: pass ctx to REST API client
 
@@ -812,7 +812,7 @@ func (s *StmtUpdate) Exec(args []driver.Value) (driver.Result, error) {
 
 // ExecContext implements driver.StmtExecContext/ExecContext.
 //
-// @Available since <<VERSION>>
+// @Available since v1.1.1
 func (s *StmtUpdate) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
 	// TODO: pass ctx to REST API client
 
