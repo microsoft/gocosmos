@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/btnguyen2k/consu/g18"
-	"github.com/btnguyen2k/consu/reddo"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/btnguyen2k/consu/g18"
+	"github.com/btnguyen2k/consu/reddo"
 )
 
 var (

@@ -313,6 +313,8 @@ func (c *RestClient) ListDatabases() *RespListDb {
 	return result
 }
 
+/*----------------------------------------------------------------------*/
+
 // CollectionSpec specifies a Cosmos DB collection specifications for creation.
 type CollectionSpec struct {
 	DbName, CollName string
@@ -477,6 +479,8 @@ func (c *RestClient) GetPkranges(dbName, collName string) *RespGetPkranges {
 	}
 	return result
 }
+
+/*----------------------------------------------------------------------*/
 
 // DocumentSpec specifies a Cosmos DB document specifications for creation.
 type DocumentSpec struct {
