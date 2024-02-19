@@ -1,4 +1,4 @@
-**Please note, this is an EXPERIMENTAL non production package. We do not provide official support for this package. Please see [SUPPORT.md](SUPPORT.md) for details.**
+**Please note: this is an EXPERIMENTAL non production package. We do not provide official support for this package. See [SUPPORT.md](SUPPORT.md) for details.**
 
 **Our official package [azcosmos](https://github.com/Azure/azure-sdk-for-go/blob/main/sdk/data/azcosmos/README.md) is ready for production use.**
 
