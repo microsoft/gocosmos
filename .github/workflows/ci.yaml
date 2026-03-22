@@ -22,7 +22,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
       - name: Set up Go env
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: 'stable'
       - name: Run go fmt
@@ -37,7 +37,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
       - name: Set up Go env
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: 'stable'
       - name: golangci-lint
@@ -83,7 +83,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
       - name: Set up Go env
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
       - name: Run tests
@@ -108,7 +108,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
       - name: Set up Go env
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
       - name: Run tests
@@ -134,7 +134,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
       - name: Set up Go env
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
       - name: Run tests
@@ -173,7 +173,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
       - name: Set up Go env
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
       - name: Run tests
@@ -212,7 +212,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
       - name: Set up Go env
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
       - name: Run tests
@@ -251,7 +251,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
       - name: Set up Go env
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
       - name: Run tests
@@ -290,7 +290,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
       - name: Set up Go env
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
       - name: Run tests
@@ -329,7 +329,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
       - name: Set up Go env
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
       - name: Run tests
