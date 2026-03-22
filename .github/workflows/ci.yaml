@@ -20,7 +20,7 @@ jobs:
     name: Check format with go fmt
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Go env
         uses: actions/setup-go@v5
         with:
@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Go env
         uses: actions/setup-go@v5
         with:
@@ -55,7 +55,7 @@ jobs:
       RELEASE_NOTES: ${{ steps.release_dry_run.outputs.releaseNotes }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Install Node
         uses: actions/setup-node@v4
         with:
@@ -81,7 +81,7 @@ jobs:
     name: Run module tests with Go ${{ matrix.go }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Go env
         uses: actions/setup-go@v5
         with:
@@ -106,7 +106,7 @@ jobs:
     name: Run other tests with Go ${{ matrix.go }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Go env
         uses: actions/setup-go@v5
         with:
@@ -132,7 +132,7 @@ jobs:
     name: Run RestClient non-query tests with Go ${{ matrix.go }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Go env
         uses: actions/setup-go@v5
         with:
@@ -171,7 +171,7 @@ jobs:
     name: Run RestClient query tests with Go ${{ matrix.go }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Go env
         uses: actions/setup-go@v5
         with:
@@ -210,7 +210,7 @@ jobs:
     name: Run StmtDatabase query tests with Go ${{ matrix.go }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Go env
         uses: actions/setup-go@v5
         with:
@@ -249,7 +249,7 @@ jobs:
     name: Run StmtCollection query tests with Go ${{ matrix.go }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Go env
         uses: actions/setup-go@v5
         with:
@@ -288,7 +288,7 @@ jobs:
     name: Run StmtDocumentNonQuery query tests with Go ${{ matrix.go }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Go env
         uses: actions/setup-go@v5
         with:
@@ -327,7 +327,7 @@ jobs:
     name: Run StmtDocumentQuery query tests with Go ${{ matrix.go }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Go env
         uses: actions/setup-go@v5
         with:
